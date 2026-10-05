@@ -1,0 +1,23 @@
+[project]
+name = "beautiful-feet"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { email = "michael.russell.ut@gmail.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "beautifulsoup4>=4.15.0",
+    "ebooklib>=0.20",
+    "lxml>=6.1.3",
+    "regex>=2026.9.29",
+    "requests>=2.34.2",
+]
+
+[project.scripts]
+beautiful-feet = "beautiful_feet:main"
+
+[build-system]
+requires = ["uv_build>=0.12.9,<0.13.0"]
+build-backend = "uv_build"

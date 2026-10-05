@@ -1,0 +1,278 @@
+"""Textual variants database and loader for the Book of Mormon Early-Source & Onomasticon Study Edition."""
+
+from __future__ import annotations
+import os
+import json
+from typing import Dict, List
+from .models import TextualVariant
+
+VARIANTS_DATA: List[Dict[str, str]] = [
+    {
+        "verse_key": "1-ne-11-18",
+        "target_phrase": "the mother of the Son of God",
+        "reading_1830": "the mother of God, after the manner of the flesh",
+        "reading_modern": "the mother of the Son of God, after the manner of the flesh",
+        "explanation": "In the 1830 first edition and Original Manuscript, the text read 'the mother of God'. Joseph Smith added 'the Son of' in the 1837 Kirtland edition to emphasize the distinction between God the Father and the mortal incarnation of Jesus Christ.",
+        "source": "1830 First Edition / Original Manuscript / 1837 Kirtland Revision",
+    },
+    {
+        "verse_key": "1-ne-11-21",
+        "target_phrase": "even the Son of the Eternal Father",
+        "reading_1830": "yea, even the Eternal Father",
+        "reading_modern": "yea, even the Son of the Eternal Father",
+        "explanation": "The 1830 edition read 'the Eternal Father'. 'The Son of' was added by Joseph Smith in 1837 to provide theological clarity regarding the distinct persons of the Godhead.",
+        "source": "1830 First Edition / 1837 Kirtland Revision",
+    },
+    {
+        "verse_key": "1-ne-11-32",
+        "target_phrase": "the Son of God, was judged of the world",
+        "reading_1830": "the everlasting God, was judged of the world",
+        "reading_modern": "the Son of God, was judged of the world",
+        "explanation": "Both the Original Manuscript and 1830 first edition read 'the everlasting God'. Joseph Smith emended this to 'the Son of God' in 1837.",
+        "source": "1830 First Edition / Original Manuscript / 1837 Kirtland Revision",
+    },
+    {
+        "verse_key": "1-ne-12-18",
+        "target_phrase": "even Jesus Christ",
+        "reading_1830": "even Jesus Christ, which is the Lamb of God",
+        "reading_modern": "even the Lamb of God",
+        "explanation": "The explicit messianic name 'Jesus Christ' appeared in both the Printer's Manuscript and the 1830 first edition, but was edited out in 1837 to avoid redundancy with the subsequent phrase.",
+        "source": "Printer's Manuscript / 1830 First Edition",
+    },
+    {
+        "verse_key": "1-ne-13-40",
+        "target_phrase": "the Lamb of God is the Son of the Eternal Father",
+        "reading_1830": "the Lamb of God is the Eternal Father",
+        "reading_modern": "the Lamb of God is the Son of the Eternal Father",
+        "explanation": "In the 1830 edition, the text read 'the Lamb of God is the Eternal Father'. Joseph Smith added 'the Son of' in 1837 for theological consistency with Mosiah 15 and 1 Nephi 11.",
+        "source": "1830 First Edition / 1837 Kirtland Revision",
+    },
+    {
+        "verse_key": "1-ne-19-10",
+        "target_phrase": "Zenock, and Neum",
+        "reading_1830": "the God of our fathers... Zenock, and Neum, and Zenos",
+        "reading_modern": "the God of our fathers... Zenock, and Neum, and Zenos",
+        "explanation": "Zenock and Neum are ancient Israelite prophets whose writings were preserved on the Brass Plates of Laban but omitted from the Masoretic Old Testament canon. Zenock is cited for testifying of the Messiah's crucifixion, and Neum of his burial.",
+        "source": "Brass Plates Prophetic Witness / Critical Text Project",
+    },
+    {
+        "verse_key": "1-ne-20-1",
+        "target_phrase": "out of the waters of Judah",
+        "reading_1830": "out of the waters of Judah",
+        "reading_modern": "out of the waters of Judah, or out of the waters of baptism",
+        "explanation": "The parenthetical gloss 'or out of the waters of baptism' was first added by Joseph Smith in the 1840 Nauvoo edition to clarify Isaiah 48:1, omitted in subsequent British editions, and permanently restored in the 1920 LDS edition.",
+        "source": "1840 Nauvoo Edition / 1920 Edition",
+    },
+    {
+        "verse_key": "2-ne-12-16",
+        "target_phrase": "ships of the sea, and upon all the ships of Tarshish",
+        "reading_1830": "and upon all the ships of the sea, and upon all the ships of Tarshish, and upon all pleasant pictures",
+        "reading_modern": "and upon all the ships of the sea, and upon all the ships of Tarshish, and upon all pleasant pictures",
+        "explanation": "A renowned textual variant in Isaiah 2:16: the ancient Greek Septuagint reads 'ships of the sea', whereas the Hebrew Masoretic Text reads 'ships of Tarshish'. The Book of Mormon preserves BOTH poetic colon phrases, suggesting the Brass Plates possessed a fuller ancient reading that preceded the textual divergence.",
+        "source": "Isaiah 2:16 Hebrew/Septuagint Textual Colometry",
+    },
+    {
+        "verse_key": "2-ne-25-23",
+        "target_phrase": "after all we can do",
+        "reading_1830": "for we know that it is by grace that we are saved, after all we can do",
+        "reading_modern": "for we know that it is by grace that we are saved, after all we can do",
+        "explanation": "Early discourse exposition from Orson Pratt and Wilford Woodruff emphasized this passage alongside 2 Nephi 10:24 ('reconcile yourselves to the will of God... through the grace of God that ye are saved'), demonstrating that 'after' in ancient Semitic idiom functions as 'notwithstanding' or 'apart from'.",
+        "source": "Historical Discourse Exposition & Critical Text",
+    },
+    {
+        "verse_key": "2-ne-30-6",
+        "target_phrase": "pure and a delightsome people",
+        "reading_1830": "a white and a delightsome people",
+        "reading_modern": "a pure and a delightsome people",
+        "explanation": "Joseph Smith altered 'white' to 'pure' in the 1840 third edition. Later European and Utah editions continued using the 1837 'white' until 1981, when the Church adopted Joseph Smith's 1840 reading 'pure' as the authoritative text.",
+        "source": "1830 First Edition / 1840 Nauvoo Edition / 1981 Edition",
+    },
+    {
+        "verse_key": "jacob-7-7",
+        "target_phrase": "the doctrine of Christ",
+        "reading_1830": "and this is the way; and there is no man knoweth of any such things",
+        "reading_modern": "and this is the way; and there is no man knoweth of any such things",
+        "explanation": "Sherem's anti-Christ confrontation represents the earliest recorded theological disputation in Nephite history regarding the Law of Moses versus prophetic foreknowledge of the atonement.",
+        "source": "1830 First Edition / Historical Analysis",
+    },
+    {
+        "verse_key": "mosiah-21-28",
+        "target_phrase": "king Mosiah had a gift from God",
+        "reading_1830": "king Benjamin had a gift from God",
+        "reading_modern": "king Mosiah had a gift from God",
+        "explanation": "Both the 1830 first edition and the surviving Original Manuscript read 'king Benjamin'. Chronologically, according to Mosiah 6:4-5, King Benjamin had died prior to Ammon's expedition to the land of Nephi. Joseph Smith corrected the name to 'Mosiah' in the 1837 second edition.",
+        "source": "1830 First Edition / Original Manuscript / 1837 Revision",
+    },
+    {
+        "verse_key": "mosiah-27-29",
+        "target_phrase": "snatched out of an everlasting burning",
+        "reading_1830": "my soul was snatched out of an everlasting burning",
+        "reading_modern": "my soul was snatched out of an everlasting burning",
+        "explanation": "Oliver Cowdery's printer's manuscript and the 1830 edition read 'snatched'. While some late 19th-century printings conjectured 'snatched' vs 'racked', the Critical Text Project confirms 'snatched' as the authentic reading echoing Zechariah 3:2 ('a brand plucked out of the fire').",
+        "source": "Original Manuscript / Printer's Manuscript / Critical Text Project",
+    },
+    {
+        "verse_key": "mosiah-29-15",
+        "target_phrase": "he that had committed iniquity",
+        "reading_1830": "he that had committed iniquity, him have I punished",
+        "reading_modern": "he that had committed iniquity, him have I punished",
+        "explanation": "Marks King Mosiah's seminal speech proposing the dissolution of the Nephite monarchy in favor of representative judges and equal legal accountability.",
+        "source": "1830 First Edition / Constitutional Discourse",
+    },
+    {
+        "verse_key": "alma-5-48",
+        "target_phrase": "the Son, the Only Begotten of the Father",
+        "reading_1830": "the Son, the only begotten of the Father, full of grace, and mercy, and truth",
+        "reading_modern": "the Son, the Only Begotten of the Father, full of grace, and mercy, and truth",
+        "explanation": "Alma's declaration at Zarahemla bridges Johannine prologue theology (John 1:14) with ancient American prophetic testimony.",
+        "source": "1830 First Edition / Critical Text Project",
+    },
+    {
+        "verse_key": "alma-24-19",
+        "target_phrase": "would suffer even unto death",
+        "reading_1830": "they were firm, and would suffer even unto death rather than commit sin",
+        "reading_modern": "they were firm, and would suffer even unto death rather than commit sin",
+        "explanation": "The Anti-Nephi-Lehies' total pacifist commitment to bury their weapons of rebellion represents one of the most radical examples of covenantal nonviolence in scriptural literature.",
+        "source": "1830 First Edition / Theological Discourse",
+    },
+    {
+        "verse_key": "alma-29-4",
+        "target_phrase": "he allotteth unto men",
+        "reading_1830": "whether it be unto death or unto life; yea, I know that he allotteth unto men, yea, decreeth unto them decrees which are unalterable",
+        "reading_modern": "whether it be unto death or unto life; yea, I know that he allotteth unto men, yea, decreeth unto them decrees which are unalterable",
+        "explanation": "Punctuation and clause division were refined in 1837 and 1920 to clarify Alma's philosophical exposition on moral agency and divine justice.",
+        "source": "1830 First Edition / 1837 Revision",
+    },
+    {
+        "verse_key": "alma-37-21",
+        "target_phrase": "directors",
+        "reading_1830": "directors",
+        "reading_modern": "interpreters",
+        "explanation": "The 1830 edition read 'directors' in this verse. In 1920, the text was updated to 'interpreters' to align with the Hebrew Urim and Thummim instruments referenced in Mosiah 28:20 and the Title Page.",
+        "source": "1830 First Edition / 1920 Edition",
+    },
+    {
+        "verse_key": "alma-39-2",
+        "target_phrase": "the harlot Isabel",
+        "reading_1830": "the harlot Isabel",
+        "reading_modern": "the harlot Isabel",
+        "explanation": "Onomasticon etymology connects Isabel to the Semitic root *'îzeḇel ('chaste / where is the prince?'), functioning as an intentional ironic contronym in the moral narrative of Corianton's apostasy.",
+        "source": "Book of Mormon Onomasticon / Critical Text Project",
+    },
+    {
+        "verse_key": "alma-46-15",
+        "target_phrase": "true believers in Christ",
+        "reading_1830": "all those who were true believers in Christ took upon them, gladly, the name of Christ, or Christians as they were called",
+        "reading_modern": "all those who were true believers in Christ took upon them, gladly, the name of Christ, or Christians as they were called",
+        "explanation": "Captain Moroni's Title of Liberty context: provides the internal historical origin of the designation 'Christians' among the Nephites around 73 BC, preceding the Antioch narrative in Acts 11:26.",
+        "source": "1830 First Edition / Historical Analysis",
+    },
+    {
+        "verse_key": "hel-12-2",
+        "target_phrase": "harden their hearts",
+        "reading_1830": "then is the time that they do harden their hearts, and do forget the Lord their God",
+        "reading_modern": "then is the time that they do harden their hearts, and do forget the Lord their God",
+        "explanation": "Mormon's editorial treatise on the pride cycle: explicitly analyzing the tragic tendency of societies to abandon spiritual vigilance precisely at the height of material prosperity.",
+        "source": "1830 First Edition / Editorial Commentary of Mormon",
+    },
+    {
+        "verse_key": "hel-13-30",
+        "target_phrase": "ye had not remembered",
+        "reading_1830": "because that ye had remembered the Lord your God",
+        "reading_modern": "because that ye had not remembered the Lord your God",
+        "explanation": "The negative particle 'not' was accidentally omitted by the compositor in the 1830 typesetting, completely inverting Samuel the Lamanite's meaning. It was restored based on the Printer's Manuscript.",
+        "source": "Printer's Manuscript / Critical Text Restoration",
+    },
+    {
+        "verse_key": "3-ne-11-32",
+        "target_phrase": "this is my doctrine",
+        "reading_1830": "And this is my doctrine, and it is the doctrine which the Father hath given unto me",
+        "reading_modern": "And this is my doctrine, and it is the doctrine which the Father hath given unto me",
+        "explanation": "The resurrected Christ's initial sermon at the Bountiful temple defining His doctrine exclusively as faith, repentance, baptism, and the reception of the Holy Ghost, condemning contentious philosophical additions.",
+        "source": "1830 First Edition / Doctrinal Exposition",
+    },
+    {
+        "verse_key": "3-ne-16-10",
+        "target_phrase": "reject the fulness of my gospel",
+        "reading_1830": "when the Gentiles shall sin against my gospel, and shall be filled with all manner of lyings",
+        "reading_modern": "when the Gentiles shall sin against my gospel, and shall reject the fulness of my gospel, and shall be lifted up in the pride of their hearts",
+        "explanation": "The phrase 'and shall reject the fulness of my gospel' was restored to modern editions from the Printer's Manuscript where an eye-skip (parablepsis) by the 1830 typesetter had omitted an entire clause.",
+        "source": "Printer's Manuscript / Critical Text Restoration",
+    },
+    {
+        "verse_key": "3-ne-19-25",
+        "target_phrase": "the light of his countenance",
+        "reading_1830": "the light of his countenance did shine upon them, and behold they were as white as the countenance and also the garments of Jesus",
+        "reading_modern": "the light of his countenance did shine upon them, and behold they were as white as the countenance and also the garments of Jesus",
+        "explanation": "Direct linguistic resonance with the Aaronic priestly blessing (Numbers 6:24-26: 'The Lord make his face shine upon thee'), transfiguring the twelve disciples in prayer.",
+        "source": "Biblical Intertextual Colometry / 1830 First Edition",
+    },
+    {
+        "verse_key": "3-ne-22-4",
+        "target_phrase": "shame of thy youth",
+        "reading_1830": "thou shalt forget the shame of thy youth, and shalt not remember the reproach of thy youth",
+        "reading_modern": "thou shalt forget the shame of thy youth, and shalt not remember the reproach of thy widowhood",
+        "explanation": "In quoting Isaiah 54:4, the 1830 edition repeated 'reproach of thy youth'. Joseph Smith corrected the second occurrence to 'reproach of thy widowhood' in 1837 to conform precisely with the Hebrew prophetic parallelism.",
+        "source": "1830 First Edition / 1837 Revision / Isaiah 54:4 Parallelism",
+    },
+    {
+        "verse_key": "morm-8-16",
+        "target_phrase": "brought out of darkness unto light",
+        "reading_1830": "and blessed be he that shall bring this thing to light; for it shall be brought out of darkness unto light",
+        "reading_modern": "and blessed be he that shall bring this thing to light; for it shall be brought out of darkness unto light",
+        "explanation": "Moroni's prophetic declaration regarding the modern instrument of the translation, echoing Isaiah 29:18 and 2 Nephi 3.",
+        "source": "1830 First Edition / Prophetic Commentary",
+    },
+    {
+        "verse_key": "ether-4-1",
+        "target_phrase": "showed himself unto his people",
+        "reading_1830": "after Christ truly had showed himself",
+        "reading_modern": "after Christ truly had showed himself unto his people",
+        "explanation": "'unto his people' was present in the original translation manuscript but overlooked by the 1830 compositor; restored in the 1840 Nauvoo edition.",
+        "source": "Original Manuscript / 1840 Nauvoo Edition",
+    },
+    {
+        "verse_key": "ether-12-4",
+        "target_phrase": "maketh an anchor to the souls of men",
+        "reading_1830": "which hope cometh of faith, maketh an anchor to the souls of men, which would make them sure and steadfast",
+        "reading_modern": "which hope cometh of faith, maketh an anchor to the souls of men, which would make them sure and steadfast",
+        "explanation": "Moroni's treatise on faith and hope: echoes Hebrews 6:19 ('which hope we have as an anchor of the soul, both sure and steadfast'), regularized in syntactic flow in 1837.",
+        "source": "1830 First Edition / 1837 Revision",
+    },
+    {
+        "verse_key": "moroni-7-45",
+        "target_phrase": "charity suffereth long, and is kind",
+        "reading_1830": "and charity suffereth long, and is kind, and envieth not, and is not puffed up, seeketh not her own",
+        "reading_modern": "and charity suffereth long, and is kind, and envieth not, and is not puffed up, seeketh not her own",
+        "explanation": "Mormon's discourse on pure love profoundly parallels Paul's hymn to charity in 1 Corinthians 13:4-7, demonstrating either a shared ancient liturgical source or the singular inspiration of the Spirit upon both apostolic prophets.",
+        "source": "1830 First Edition / Intertextual Analysis",
+    },
+    {
+        "verse_key": "moroni-10-4",
+        "target_phrase": "with a sincere heart, with real intent",
+        "reading_1830": "with a sincere heart, with real intent, having faith in Christ, he will manifest the truth of it unto you, by the power of the Holy Ghost",
+        "reading_modern": "with a sincere heart, with real intent, having faith in Christ, he will manifest the truth of it unto you, by the power of the Holy Ghost",
+        "explanation": "Moroni's climactic epistemic promise concluding the gold plates, balancing subjective pneumatic witness with objective scriptural engagement.",
+        "source": "1830 First Edition / Critical Text Project",
+    },
+]
+
+
+def load_textual_variants(cache_path: str = "data/textual_variants.json") -> Dict[str, List[TextualVariant]]:
+    """Load or save textual variants dictionary keyed by verse_key."""
+    os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+    mapping: Dict[str, List[TextualVariant]] = {}
+    for item in VARIANTS_DATA:
+        v = TextualVariant.from_dict(item)
+        mapping.setdefault(v.verse_key, []).append(v)
+
+    # Always write current canonical list
+    with open(cache_path, "w", encoding="utf-8") as f:
+        json.dump(
+            {vk: [v.to_dict() for v in v_list] for vk, v_list in mapping.items()},
+            f,
+            ensure_ascii=False,
+            indent=2,
+        )
+
+    return mapping
