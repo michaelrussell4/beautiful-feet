@@ -140,13 +140,13 @@ def render_speaker_index_xhtml(citation_dict: Dict[str, List[Citation]]) -> str:
         "<body>",
         '  <section epub:type="appendix" class="appendix-section">',
         '    <h1 class="book-title">Appendix A</h1>',
-        '    <h2 class="chapter-title">Historical Speaker &amp; Source Index (1830–1900)</h2>',
+        '    <h2 class="chapter-title">Historical Speaker &amp; Source Index (1830–1930)</h2>',
         '    <div class="ornament">&#10087; &bull; &#10086; &bull; &#10087;</div>',
         "",
         '    <div class="intro-box">',
-        '      <h3>The 19th-Century Book of Mormon Discourse Tradition</h3>',
+        '      <h3>The 19th-Century &amp; Early-Era Book of Mormon Discourse Tradition</h3>',
         "      <p>",
-        "        During the foundational seven decades of the Restoration (1830–1900), early Church leaders expounded ",
+        "        During the foundational century of the Restoration (1830–1930), early Church leaders expounded ",
         "        the Book of Mormon with prophetic urgency. Rather than treating it merely as devotional reading, ",
         "        they approached its record as an inspired historical and legal treatise, an apocalyptic warning to the Gentiles, ",
         "        and the definitive theological exposition on the Abrahamic covenant and the atonement of Jesus Christ.",
@@ -189,7 +189,11 @@ def render_speaker_index_xhtml(citation_dict: Dict[str, List[Citation]]) -> str:
             b_slug = parts[0] if len(parts) == 3 else "-".join(parts[:-2])
             ch = parts[-2]
             v = parts[-1]
-            verses_by_book[b_slug].add(f"{ch}:{v}")
+            if c.covered_range and ("–" in c.covered_range or "," in c.covered_range):
+                verses_by_book[b_slug].add(f"{ch}:{c.covered_range}")
+            else:
+                verses_by_book[b_slug].add(f"{ch}:{v}")
+
 
         lines.extend([
             f'    <div class="speaker-entry" id="{spk_id}" style="margin-top: 1.8em; padding-bottom: 1.2em; border-bottom: 1px solid #dcd3c5;">',
@@ -269,7 +273,7 @@ def render_onoma_gazetteer_xhtml(onoma_dict: Dict[str, OnomaEntry]) -> str:
         "        records in reformed Egyptian.",
         "      </p>",
         "      <p>",
-        "        This comprehensive gazetteer provides the Deseret Alphabet phonetic spelling, International Phonetic ",
+        "        This comprehensive gazetteer provides the International Phonetic ",
         "        Alphabet (IPA) pronunciation, grammatical classification, concise definition, and synthesized ",
         "        etymological root analysis for every name in the record.",
         "      </p>",
@@ -291,20 +295,18 @@ def render_onoma_gazetteer_xhtml(onoma_dict: Dict[str, OnomaEntry]) -> str:
 
         for entry in letter_groups[letter]:
             lemma_esc = html.escape(entry.lemma)
-            deseret_esc = html.escape(entry.deseret) if entry.deseret else ""
             pron_esc = html.escape(entry.pronunciation) if entry.pronunciation else ""
             class_esc = html.escape(entry.classification) if entry.classification else ""
             def_esc = html.escape(entry.definition) if entry.definition else ""
             summary_esc = html.escape(entry.summary) if entry.summary else ""
 
-            des_html = f'<span class="onoma-deseret" style="font-size: 1.1em; margin-left: 0.4em; color: #333;">{deseret_esc}</span>' if deseret_esc else ""
             prn_html = f'<span class="onoma-pron" style="font-style: italic; color: #555; margin-left: 0.4em;">/{pron_esc}/</span>' if pron_esc else ""
             cls_html = f'<span class="onoma-class" style="font-size: 0.75em; text-transform: uppercase; background-color: #dbe5ee; color: #1a446c; padding: 0.1em 0.45em; border-radius: 3px; margin-left: 0.5em; letter-spacing: 0.04em;">{class_esc}</span>' if class_esc else ""
 
             lines.extend([
                 f'    <div class="gazetteer-entry" style="margin-bottom: 1.4em; padding-bottom: 0.9em; border-bottom: 1px dotted #ccc;">',
                 '      <div style="margin-bottom: 0.25em;">',
-                f'        <strong style="font-size: 1.1em; color: #0b5394;">{lemma_esc}</strong>{des_html}{prn_html}{cls_html}',
+                f'        <strong style="font-size: 1.1em; color: #0b5394;">{lemma_esc}</strong>{prn_html}{cls_html}',
                 "      </div>",
             ])
 

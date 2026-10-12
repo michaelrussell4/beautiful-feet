@@ -15,6 +15,7 @@ class Citation:
     talk_id: str = ""
     target_id: str = ""
     excerpt: str = ""
+    covered_range: str = ""
 
     def to_dict(self) -> dict:
         return {
@@ -26,6 +27,7 @@ class Citation:
             "talk_id": self.talk_id,
             "target_id": self.target_id,
             "excerpt": self.excerpt,
+            "covered_range": self.covered_range,
         }
 
     @classmethod
@@ -39,7 +41,9 @@ class Citation:
             talk_id=data.get("talk_id", ""),
             target_id=data.get("target_id", ""),
             excerpt=data.get("excerpt", ""),
+            covered_range=data.get("covered_range", ""),
         )
+
 
 
 @dataclass

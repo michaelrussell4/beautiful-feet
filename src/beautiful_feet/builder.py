@@ -5,7 +5,7 @@ import os
 import re
 import html
 import uuid
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Set, Tuple
 import ebooklib
 from ebooklib import epub
 
@@ -159,37 +159,119 @@ a.var-ref sup {
 
 /* Footnotes Section & Aside Items */
 section.footnotes-section {
-    margin-top: 2.8em;
-    padding-top: 1em;
+    margin-top: 3.2em;
+    padding-top: 1.2em;
     border-top: 2px solid #e0d8cc;
 }
 
+/* Dividing line between footnote cards */
+hr.fn-divider {
+    border: 0;
+    height: 1px;
+    background: #e2dbce;
+    margin: 2.2em auto;
+    width: 85%;
+}
+
 aside.footnote-item {
-    margin-bottom: 1.4em;
-    padding: 0.7em 0.9em;
+    margin: 1.6em 0;
+    padding: 0.95em 1.15em;
     background-color: #f7f5f0;
-    border-left: 3.5px solid #8c6d3b;
-    border-radius: 2px;
+    border: 1px solid #e0d8cc;
+    border-left: 4.5px solid #8c6d3b;
+    border-radius: 4px;
     font-size: 0.9em;
     line-height: 1.5;
 }
 
 aside.onoma-footnote {
+    border-color: #cddbe8;
     border-left-color: #0b5394;
-    background-color: #f0f4f8;
+    background-color: #f2f6fa;
 }
 
 aside.cit-footnote {
+    border-color: #eedcdc;
     border-left-color: #990000;
-    background-color: #fcf4f4;
+    background-color: #fcf5f5;
 }
 
 aside.var-footnote {
+    border-color: #eee4cb;
     border-left-color: #b8860b;
     background-color: #fdfaf0;
 }
 
+/* Footnote Navigation Links */
+.fn-nav-top {
+    font-size: 0.82em;
+    margin: 0 0 0.85em 0;
+    padding-bottom: 0.45em;
+    border-bottom: 1px dashed #d5ccbe;
+    text-align: left;
+}
+
+.fn-nav-bottom {
+    font-size: 0.84em;
+    margin: 1.1em 0 0 0;
+    padding-top: 0.5em;
+    border-top: 1px dashed #d5ccbe;
+    text-align: right;
+}
+
+aside.onoma-footnote .fn-nav-top,
+aside.onoma-footnote .fn-nav-bottom {
+    border-color: #c4d7e8;
+}
+
+aside.cit-footnote .fn-nav-top,
+aside.cit-footnote .fn-nav-bottom {
+    border-color: #ecd2d2;
+}
+
+aside.var-footnote .fn-nav-top,
+aside.var-footnote .fn-nav-bottom {
+    border-color: #ebdcb6;
+}
+
+.fn-nav-top a.return-link,
+.fn-nav-bottom a.return-link {
+    display: inline-block;
+    padding: 0.15em 0.55em;
+    background-color: #e5eff8;
+    color: #0b5394;
+    text-decoration: none;
+    font-weight: 600;
+    border-radius: 3px;
+    letter-spacing: 0.01em;
+}
+
+aside.cit-footnote .fn-nav-top a.return-link,
+aside.cit-footnote .fn-nav-bottom a.return-link {
+    background-color: #fcebeb;
+    color: #8c1010;
+}
+
+aside.var-footnote .fn-nav-top a.return-link,
+aside.var-footnote .fn-nav-bottom a.return-link {
+    background-color: #fef7e6;
+    color: #8c6800;
+}
+
+.fn-nav-top a.return-link:hover,
+.fn-nav-bottom a.return-link:hover {
+    text-decoration: underline;
+}
+
+a.return-link {
+    text-decoration: none;
+    color: #0b5394;
+    font-weight: bold;
+    margin-left: 0.3em;
+}
+
 /* Onomasticon Entry Components */
+
 .onoma-header {
     margin-bottom: 0.35em;
     display: block;
@@ -199,13 +281,6 @@ aside.var-footnote {
     font-weight: bold;
     font-size: 1.05em;
     color: #0b5394;
-}
-
-.onoma-deseret {
-    font-size: 1.15em;
-    margin-left: 0.4em;
-    color: #222222;
-    font-weight: normal;
 }
 
 .onoma-pron {
@@ -292,12 +367,26 @@ p.cit-header {
     font-size: 0.9em;
 }
 
+.cit-range-badge {
+    display: inline-block;
+    font-size: 0.74em;
+    font-weight: bold;
+    background-color: #fcebeb;
+    color: #990000;
+    border: 1px solid #eec4c4;
+    padding: 0.1em 0.45em;
+    border-radius: 3px;
+    margin-left: 0.4em;
+    letter-spacing: 0.02em;
+}
+
 .cit-title-line {
     font-style: italic;
     color: #333333;
     margin: 0.15em 0 0.4em 0;
     font-size: 0.92em;
 }
+
 
 /* Verbatim Discourse Blockquote */
 blockquote.cit-excerpt {
@@ -320,7 +409,17 @@ blockquote.cit-excerpt p:last-child {
     margin-bottom: 0;
 }
 
+/* Bold Highlighted Verse Reference in Excerpt */
+strong.cit-verse-highlight {
+    font-weight: bold;
+    color: #781010;
+    background-color: #fcedeb;
+    padding: 0.05em 0.25em;
+    border-radius: 2px;
+}
+
 /* Textual Variant Entry Components */
+
 .var-header {
     margin-bottom: 0.4em;
 }
@@ -374,12 +473,7 @@ p.var-source {
     margin: 0.3em 0 0 0;
 }
 
-a.return-link {
-    text-decoration: none;
-    color: #0b5394;
-    font-weight: bold;
-    margin-left: 0.3em;
-}
+
 
 /* Decorative Elements */
 div.ornament {
@@ -418,18 +512,28 @@ div.ornament {
     span.verse-num {
         color: #d4a359;
     }
+    hr.fn-divider {
+        background: #333333;
+    }
     aside.footnote-item {
         background-color: #1a1a1a;
         color: #e0e0e0;
+        border-color: #2e2e2e;
     }
     aside.onoma-footnote {
-        background-color: #15222e;
+        background-color: #141f2a;
+        border-color: #1e354a;
+        border-left-color: #4a90e2;
     }
     aside.cit-footnote {
-        background-color: #261515;
+        background-color: #241414;
+        border-color: #441e1e;
+        border-left-color: #d32f2f;
     }
     aside.var-footnote {
-        background-color: #242014;
+        background-color: #221e12;
+        border-color: #42381e;
+        border-left-color: #d4a017;
     }
     blockquote.cit-excerpt {
         background-color: #181818;
@@ -445,9 +549,6 @@ div.ornament {
     a.onoma-ref, .onoma-lemma {
         color: #90caf9;
     }
-    .onoma-deseret {
-        color: #e0e0e0;
-    }
     a.cit-ref, p.cit-header {
         color: #ef9a9a;
     }
@@ -462,6 +563,45 @@ div.ornament {
         background-color: #441a1a;
         color: #ef9a9a;
     }
+    .cit-range-badge {
+        background-color: #3e1b1b;
+        color: #ffb4a2;
+        border-color: #632d2d;
+    }
+    .fn-nav-top, .fn-nav-bottom {
+        border-color: #3e3e3e;
+    }
+    aside.onoma-footnote .fn-nav-top, aside.onoma-footnote .fn-nav-bottom {
+        border-color: #22384c;
+    }
+    aside.cit-footnote .fn-nav-top, aside.cit-footnote .fn-nav-bottom {
+        border-color: #4c2222;
+    }
+    aside.var-footnote .fn-nav-top, aside.var-footnote .fn-nav-bottom {
+        border-color: #443b1e;
+    }
+    .fn-nav-top a.return-link,
+    .fn-nav-bottom a.return-link {
+        background-color: #1e2c3a;
+        color: #8ab4f8;
+    }
+    aside.cit-footnote .fn-nav-top a.return-link,
+    aside.cit-footnote .fn-nav-bottom a.return-link {
+        background-color: #3c1a1a;
+        color: #ff8a80;
+    }
+    aside.var-footnote .fn-nav-top a.return-link,
+    aside.var-footnote .fn-nav-bottom a.return-link {
+        background-color: #383015;
+        color: #ffd54f;
+    }
+    a.return-link {
+        color: #8ab4f8;
+    }
+    strong.cit-verse-highlight {
+        color: #ff9e80;
+        background-color: #3e1b1b;
+    }
     p.onoma-summary, p.var-explanation, .cit-speaker {
         color: #dddddd;
     }
@@ -470,7 +610,68 @@ div.ornament {
         border-color: #333333;
     }
 }
+
 """
+
+
+BOM_REF_PATTERNS: Dict[str, str] = {
+    "1-ne": r"1\s*(?:Nephi|Ne)\b\.?",
+    "2-ne": r"2\s*(?:Nephi|Ne)\b\.?",
+    "3-ne": r"3\s*(?:Nephi|Ne)\b\.?",
+    "4-ne": r"4\s*(?:Nephi|Ne)\b\.?",
+    "jacob": r"Jacob\b\.?",
+    "enos": r"Enos\b\.?",
+    "jarom": r"Jarom\b\.?",
+    "omni": r"Omni\b\.?",
+    "w-of-m": r"(?:Words\s+of\s+Mormon|W\.?\s*of\s*M\.?|W\s*M)\b\.?",
+    "mosiah": r"Mosiah\b\.?",
+    "alma": r"Alma\b\.?",
+    "hel": r"(?:Helaman|Hel)\b\.?",
+    "morm": r"(?:Mormon|Morm)\b\.?",
+    "ether": r"Ether\b\.?",
+    "moroni": r"(?:Moroni|Moro?)\b\.?",
+}
+
+
+def parse_verse_range_token(v_spec: str) -> Set[int]:
+    """Parse verse specification like '4', '18-20', '1–2', '11, 12' into a set of integer verse numbers."""
+    verses: Set[int] = set()
+    for part in re.split(r"[,;]", v_spec):
+        part = part.strip()
+        m = re.match(r"^(\d+)(?:\s*[–—\-]\s*(\d+))?$", part)
+        if m:
+            start = int(m.group(1))
+            end = int(m.group(2)) if m.group(2) else start
+            verses.update(range(start, end + 1))
+    return verses
+
+
+def highlight_verse_reference_in_excerpt(
+    text: str,
+    book_slug: str,
+    chapter_num: int,
+    target_verses: Set[int],
+) -> str:
+    """Escape text and bold embedded scripture references matching the target verse/range."""
+    escaped = html.escape(text)
+    b_pat = BOM_REF_PATTERNS.get(book_slug)
+    if not b_pat or not target_verses:
+        return escaped
+
+    pattern = re.compile(
+        rf"\b({b_pat}\s+{chapter_num}\s*:\s*([0-9]+(?:\s*[–—\-]\s*[0-9]+)?(?:\s*,\s*[0-9]+(?:\s*[–—\-]\s*[0-9]+)?)*))\b",
+        re.IGNORECASE,
+    )
+
+    def repl(m: re.Match) -> str:
+        full_ref = m.group(1)
+        v_spec = m.group(2)
+        ref_verses = parse_verse_range_token(v_spec)
+        if ref_verses & target_verses:
+            return f'<strong class="cit-verse-highlight">{full_ref}</strong>'
+        return full_ref
+
+    return pattern.sub(repl, escaped)
 
 
 def render_chapter_xhtml(chapter: Chapter) -> str:
@@ -505,18 +706,22 @@ def render_chapter_xhtml(chapter: Chapter) -> str:
             '      <h3 class="footnotes-title">Study Notes &amp; Historical Expositions</h3>',
         ])
 
+        onoma_verse_map: Dict[str, int] = {
+            slugify_lemma(lem): v.verse_num
+            for v in chapter.verses
+            for lem in v.onoma_lemmas
+        }
+        rendered_footnotes_count = 0
+
         # 1. Onomasticon Entries for this chapter
         if chapter.onoma_entries:
             lines.append("      <!-- Onomasticon Etymology Notes -->")
             for slug, entry in sorted(chapter.onoma_entries.items()):
                 fn_id = f"fn-onoma-{slug}"
                 ref_id = f"ref-onoma-{slug}"
+                v_num = onoma_verse_map.get(slug)
+                v_label = f"verse {v_num}" if v_num is not None else "verse"
                 lemma_esc = html.escape(entry.lemma)
-                deseret_html = (
-                    f'<span class="onoma-deseret">{html.escape(entry.deseret)}</span>'
-                    if entry.deseret
-                    else ""
-                )
                 pron_html = (
                     f'<span class="onoma-pron">/{html.escape(entry.pronunciation)}/</span>'
                     if entry.pronunciation
@@ -534,13 +739,19 @@ def render_chapter_xhtml(chapter: Chapter) -> str:
                 )
                 summary_esc = html.escape(entry.summary) if entry.summary else "No additional notes."
 
+                if rendered_footnotes_count > 0:
+                    lines.append('      <hr class="fn-divider" />')
+                rendered_footnotes_count += 1
+
                 lines.extend([
                     f'      <aside epub:type="footnote" id="{fn_id}" class="footnote-item onoma-footnote">',
+                    f'        <p class="fn-nav-top"><a href="#{ref_id}" class="return-link" title="Return to {v_label}">&#8617; Return to {v_label}</a></p>',
                     '        <div class="onoma-header">',
-                    f'          <span class="onoma-lemma">{lemma_esc}</span>{deseret_html}{pron_html}{class_html}',
+                    f'          <span class="onoma-lemma">{lemma_esc}</span>{pron_html}{class_html}',
                     "        </div>",
                     f"        {def_html}" if def_html else "",
-                    f'        <p class="onoma-summary">{summary_esc}<a href="#{ref_id}" class="return-link" title="Return to text"> ↩</a></p>',
+                    f'        <p class="onoma-summary">{summary_esc}</p>',
+                    f'        <p class="fn-nav-bottom"><a href="#{ref_id}" class="return-link" title="Return to {v_label}">Return to {v_label} &#8617;</a></p>',
                     "      </aside>",
                 ])
 
@@ -551,6 +762,7 @@ def render_chapter_xhtml(chapter: Chapter) -> str:
                 chapter.variant_map.items(),
                 key=lambda item: int(item[0].split("-")[-1]) if item[0].split("-")[-1].isdigit() else 0,
             ):
+                v_num_str = v_key.split("-")[-1]
                 fn_id = f"fn-var-{v_key}"
                 ref_id = f"ref-var-{v_key}"
 
@@ -561,8 +773,13 @@ def render_chapter_xhtml(chapter: Chapter) -> str:
                     exp_esc = html.escape(var.explanation)
                     src_esc = html.escape(var.source)
 
+                    if rendered_footnotes_count > 0:
+                        lines.append('      <hr class="fn-divider" />')
+                    rendered_footnotes_count += 1
+
                     lines.extend([
                         f'      <aside epub:type="footnote" id="{fn_id}" class="footnote-item var-footnote">',
+                        f'        <p class="fn-nav-top"><a href="#{ref_id}" class="return-link" title="Return to verse {v_num_str}">&#8617; Return to verse {v_num_str}</a></p>',
                         '        <div class="var-header">',
                         f'          <span class="var-label">Textual Variant:</span> <span class="var-phrase">&ldquo;{phrase_esc}&rdquo;</span>',
                         "        </div>",
@@ -575,7 +792,8 @@ def render_chapter_xhtml(chapter: Chapter) -> str:
                         "          </div>",
                         "        </div>",
                         f'        <p class="var-explanation">{exp_esc}</p>',
-                        f'        <p class="var-source"><em>Source:</em> {src_esc}<a href="#{ref_id}" class="return-link" title="Return to verse"> ↩</a></p>',
+                        f'        <p class="var-source"><em>Source:</em> {src_esc}</p>',
+                        f'        <p class="fn-nav-bottom"><a href="#{ref_id}" class="return-link" title="Return to verse {v_num_str}">Return to verse {v_num_str} &#8617;</a></p>',
                         "      </aside>",
                     ])
 
@@ -590,9 +808,28 @@ def render_chapter_xhtml(chapter: Chapter) -> str:
                 fn_id = f"fn-cit-{v_key}"
                 ref_id = f"ref-cit-{v_key}"
 
+                # Check if all citations on this verse share the same covered_range and it covers multiple verses
+                multi_ranges = [c.covered_range for c in cits if c.covered_range and c.covered_range != v_num_str]
+                distinct_ranges = set(multi_ranges)
+                all_have_same_range = (
+                    len(distinct_ranges) == 1
+                    and len(multi_ranges) == len(cits)
+                )
+
+                if all_have_same_range:
+                    common_range = list(distinct_ranges)[0]
+                    header_label = f"Early Historical Discourses on Verses {html.escape(common_range)}:"
+                else:
+                    header_label = f"Early Historical Discourses on Verse {v_num_str}:"
+
+                if rendered_footnotes_count > 0:
+                    lines.append('      <hr class="fn-divider" />')
+                rendered_footnotes_count += 1
+
                 lines.extend([
                     f'      <aside epub:type="footnote" id="{fn_id}" class="footnote-item cit-footnote">',
-                    f'        <p class="cit-header">Early Historical Discourses on Verse {v_num_str}:</p>',
+                    f'        <p class="fn-nav-top"><a href="#{ref_id}" class="return-link" title="Return to verse {v_num_str}">&#8617; Return to verse {v_num_str}</a></p>',
+                    f'        <p class="cit-header">{header_label}</p>',
                     '        <div class="cit-discourse-list">',
                 ])
 
@@ -615,6 +852,10 @@ def render_chapter_xhtml(chapter: Chapter) -> str:
                     year_html = (
                         f'<span class="cit-year">({c.year})</span>' if c.year else ""
                     )
+                    range_badge = ""
+                    if c.covered_range and c.covered_range != v_num_str and not all_have_same_range:
+                        range_badge = f' <span class="cit-range-badge">Verses {html.escape(c.covered_range)}</span>'
+
                     title_html = (
                         f'          <p class="cit-title-line">&ldquo;{html.escape(c.talk_title)}&rdquo;</p>'
                         if c.talk_title
@@ -623,23 +864,35 @@ def render_chapter_xhtml(chapter: Chapter) -> str:
 
                     lines.extend([
                         '          <div class="cit-discourse-item">',
-                        f'            <div class="cit-meta">{speaker_html} &bull; {source_html} {cit_str_html} {year_html}</div>',
+                        f'            <div class="cit-meta">{speaker_html} &bull; {source_html} {cit_str_html} {year_html}{range_badge}</div>',
                         f"{title_html}" if title_html else "",
                     ])
 
                     if c.excerpt:
+                        target_verses: Set[int] = set()
+                        if c.covered_range:
+                            target_verses.update(parse_verse_range_token(c.covered_range))
+                        if v_num_str.isdigit():
+                            target_verses.add(int(v_num_str))
+
                         paras = c.excerpt.split("\n\n")
                         lines.append('            <blockquote class="cit-excerpt">')
                         for p in paras:
                             if p.strip():
-                                lines.append(f"              <p>{html.escape(p.strip())}</p>")
+                                highlighted_p = highlight_verse_reference_in_excerpt(
+                                    p.strip(),
+                                    chapter.book_slug,
+                                    chapter.chapter_num,
+                                    target_verses,
+                                )
+                                lines.append(f"              <p>{highlighted_p}</p>")
                         lines.append("            </blockquote>")
 
                     lines.append("          </div>")
 
                 lines.extend([
                     "        </div>",
-                    f'        <p style="margin-top: 0.6em;"><a href="#{ref_id}" class="return-link">Return to verse {v_num_str} ↩</a></p>',
+                    f'        <p class="fn-nav-bottom"><a href="#{ref_id}" class="return-link" title="Return to verse {v_num_str}">Return to verse {v_num_str} &#8617;</a></p>',
                     "      </aside>",
                 ])
 
@@ -682,7 +935,7 @@ def render_title_page_xhtml() -> str:
       
       <div style="margin-top: 3.5em; padding-top: 1.5em; border-top: 1px solid #dcd3c5; font-size: 0.88em; color: #777;">
         <p>Featuring in-place lexical etymologies from the <em>Book of Mormon Onomasticon</em>,<br />
-        verbatim historical discourse excerpts from the <em>BYU Scripture Citation Index</em> (1830&ndash;1900),<br />
+        verbatim historical discourse excerpts from the <em>BYU Scripture Citation Index</em> (1830&ndash;1930),<br />
         and textual variants from the 1830 First Edition &amp; Manuscripts.</p>
         <p style="margin-top: 1em;">Beautiful Feet Press &bull; Scholarly Study Series</p>
       </div>
@@ -711,16 +964,17 @@ def render_intro_xhtml() -> str:
       <p>This edition integrates three primary research dimensions directly into the sacred text of the Book of Mormon, formatted specifically for Kindle e-readers and modern digital devices:</p>
       <ol>
         <li>
-          <strong>Book of Mormon Onomasticon:</strong> Proper names and geographical designations are tagged on their initial occurrence in each chapter with a blue asterisk (<span style="color:#0b5394; font-weight:bold;">*</span>). Tapping opens a modal note providing the canonical lemma, Deseret Alphabet phonetic spelling, IPA pronunciation, historical classification, definition, and synthesized Semitic / Egyptian etymological roots.
+          <strong>Book of Mormon Onomasticon:</strong> Proper names and geographical designations are tagged on their initial occurrence in each chapter with a blue asterisk (<span style="color:#0b5394; font-weight:bold;">*</span>). Tapping opens a modal note providing the canonical lemma, IPA pronunciation, historical classification, definition, and synthesized Semitic / Egyptian etymological roots.
         </li>
         <li>
           <strong>Textual Variants (1830 First Edition &amp; Manuscripts):</strong> Significant historical and doctrinal variants are marked with an amber badge (<span style="color:#b8860b; font-weight:bold;">[v]</span>). These display a direct comparative analysis between the 1830 typesetting, Oliver Cowdery&rsquo;s manuscripts, and the modern text, grounded in Royal Skousen&rsquo;s <em>Book of Mormon Critical Text Project</em>.
         </li>
         <li>
-          <strong>19th-Century Historical Discourse Excerpts (1830&ndash;1900):</strong> Verses expounded by early Church leaders are marked with crimson numbered citations (<span style="color:#990000; font-weight:bold;">[1]</span>). Unlike traditional bare cross-references, each footnote features the <em>verbatim 1&ndash;3 paragraph discourse excerpt</em> from the <em>Journal of Discourses</em> (1854&ndash;1886) or <em>Teachings of the Prophet Joseph Smith</em> (TPJS). Readers can read the exact theological commentary delivered by Joseph Smith, Brigham Young, John Taylor, Orson Pratt, and Wilford Woodruff on that specific passage.
+          <strong>Historical Discourse Excerpts (1830&ndash;1930):</strong> Verses expounded by early Church leaders are marked with crimson numbered citations (<span style="color:#990000; font-weight:bold;">[1]</span>). Unlike traditional bare cross-references, each footnote features the <em>verbatim 1&ndash;3 paragraph discourse excerpt</em> from the <em>Journal of Discourses</em> (1854&ndash;1886) or <em>Teachings of the Prophet Joseph Smith</em> (TPJS). When a discourse addresses a span of verses, the note is placed on the concluding verse of the passage with the full covered range identified. Readers can read the exact theological commentary delivered by Joseph Smith, Brigham Young, John Taylor, Orson Pratt, and Wilford Woodruff on that specific passage.
         </li>
       </ol>
     </div>
+
 
     <h3 class="footnotes-title">Scholarly Back-Matter (Appendices)</h3>
     <ul class="cit-list" style="line-height: 1.6;">

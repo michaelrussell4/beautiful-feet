@@ -63,6 +63,30 @@ def to_title_case_name(name: str) -> str:
     return "-".join(titled_parts)
 
 
+def _clean_onoma_text(txt: str) -> str:
+    txt = re.sub(r"\[\d+\]", "", txt)  # remove [1], [2]
+    txt = re.sub(r"Deseret Alphabet\s*:\s*[^\s.]+(?:\s*\([^)]*\))?", "", txt, flags=re.I)
+    txt = re.sub(r"the Deseret Alphabet transcriptions are identical", "their historical phonetic transcriptions are identical", txt, flags=re.I)
+    txt = re.sub(r"according to the Deseret Alphabet spelling, has", "in historical phonetic transcription, has", txt, flags=re.I)
+    txt = re.sub(
+        r"and the Deseret Alphabet spelling of the PN [A-Z ]+,, \(IPA:[^)]+\), and, \(IPA:[^)]+\), suggest",
+        "and historical phonetic transcriptions (IPA) suggest",
+        txt,
+        flags=re.I,
+    )
+    txt = re.sub(
+        r"as ɒmnɛr in the 1869 Deseret Alphabet; amner in SBL transliteration; IPA = ͻmnɛr",
+        "amner in SBL transliteration; IPA = /ͻmnɛr/",
+        txt,
+        flags=re.I,
+    )
+    txt = re.sub(r"according to the Deseret Alphabet spelling also begins", "in historical phonetic transcription also begins", txt, flags=re.I)
+    txt = re.sub(r"[\U00010400-\U0001044F]+", "", txt)
+    txt = re.sub(r"\s+", " ", txt).strip()
+    txt = re.sub(r"\s+([.,;:!?])", r"\1", txt)
+    return txt
+
+
 def parse_onoma_page(title: str, session: Optional[requests.Session] = None) -> Optional[OnomaEntry]:
     """Parse raw page content from Onomasticon into structured OnomaEntry."""
     s = session or requests.Session()
@@ -92,19 +116,14 @@ def parse_onoma_page(title: str, session: Optional[requests.Session] = None) -> 
                     definition = " ".join(def_parts)
                     definition = re.sub(r"\s+", " ", definition)
 
-        # 2. Deseret alphabet & Pronunciation (IPA)
+        # 2. Pronunciation (IPA)
         deseret = ""
         pronunciation = ""
 
-        # Check Deseret characters
-        m_des = re.findall(r"([𐐀-𐑏]+)", html)
-        if m_des:
-            deseret = m_des[0]
-
-        # Check IPA in parentheses with Deseret, e.g. 𐐤𐐀𐐙𐐌 (niːfaɪ)
-        m_pron_des = re.findall(r"[𐐀-𐑏]+\s*(?:,\s*)?\((?:IPA\s*)?/?([^/)]+)/?\)", html)
-        if m_pron_des:
-            pronunciation = m_pron_des[0].strip()
+        # Check IPA in parentheses, e.g. (IPA /niːfaɪ/) or (niːfaɪ)
+        m_pron = re.findall(r"\((?:IPA\s*)?/?([a-zæɑɔəɛɪʊʌθðʃʒŋʔːˈˌ]{3,25})/?\)", html, re.I)
+        if m_pron:
+            pronunciation = m_pron[0].strip()
 
         if not pronunciation:
             m_ipa = re.search(r"\(IPA\s+/?([^/)]+)/?\)", html)
@@ -127,9 +146,7 @@ def parse_onoma_page(title: str, session: Optional[requests.Session] = None) -> 
                 if curr.name in ["h2", "h3"]:
                     break
                 if curr.name == "p":
-                    txt = curr.get_text(" ", strip=True)
-                    txt = re.sub(r"\[\d+\]", "", txt)  # remove [1], [2]
-                    txt = re.sub(r"\s+", " ", txt)
+                    txt = _clean_onoma_text(curr.get_text(" ", strip=True))
                     if (
                         len(txt) > 25
                         and not txt.startswith("Jump to navigation")
@@ -141,9 +158,7 @@ def parse_onoma_page(title: str, session: Optional[requests.Session] = None) -> 
         summary = " ".join(etym_paras[:2])
         if not summary:
             for p in soup.find_all("p"):
-                txt = p.get_text(" ", strip=True)
-                txt = re.sub(r"\[\d+\]", "", txt)
-                txt = re.sub(r"\s+", " ", txt)
+                txt = _clean_onoma_text(p.get_text(" ", strip=True))
                 if len(txt) > 30 and not txt.startswith("Jump to navigation"):
                     summary = txt
                     break
@@ -154,11 +169,12 @@ def parse_onoma_page(title: str, session: Optional[requests.Session] = None) -> 
             raw_title=title,
             classification=classification,
             definition=definition,
-            deseret=deseret,
+            deseret="",
             pronunciation=pronunciation,
             summary=summary,
             etymology_paragraphs=etym_paras,
         )
+
     except Exception as e:
         logger.warning(f"Error parsing onomasticon entry {title}: {e}")
         return None

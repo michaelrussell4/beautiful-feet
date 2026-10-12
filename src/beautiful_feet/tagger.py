@@ -6,6 +6,7 @@ from typing import Dict, List, Set, Tuple
 import regex
 
 from .models import Book, Chapter, Verse, OnomaEntry, Citation, TextualVariant
+from .citation_fetcher import deduplicate_citations_to_last_verse
 
 
 def slugify_lemma(lemma: str) -> str:
@@ -116,7 +117,8 @@ class CitationTagger:
     """Injects verse-level historical citation footnote references."""
 
     def __init__(self, citation_dict: Dict[str, List[Citation]]):
-        self.citation_dict = citation_dict
+        self.citation_dict = deduplicate_citations_to_last_verse(citation_dict)
+
 
     def tag_chapter_citations(self, chapter: Chapter) -> int:
         """Inject citation anchors at the end of each verse that has citations."""

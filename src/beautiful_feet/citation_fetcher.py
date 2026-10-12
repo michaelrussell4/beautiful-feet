@@ -158,16 +158,96 @@ def parse_citation_item(ref_text: str, talk_title: str = "") -> Optional[Citatio
     return None
 
 
+def format_verse_numbers(v_nums: List[int]) -> str:
+    """Format a list of sorted verse integers into standard ranges like '18–20' or '1–2, 19–20'."""
+    if not v_nums:
+        return ""
+    v_nums = sorted(set(v_nums))
+    ranges = []
+    start = v_nums[0]
+    prev = v_nums[0]
+    for n in v_nums[1:]:
+        if n == prev + 1:
+            prev = n
+        else:
+            if start == prev:
+                ranges.append(str(start))
+            else:
+                ranges.append(f"{start}–{prev}")
+            start = n
+            prev = n
+    if start == prev:
+        ranges.append(str(start))
+    else:
+        ranges.append(f"{start}–{prev}")
+    return ", ".join(ranges)
+
+
+def deduplicate_citations_to_last_verse(
+    citation_dict: Dict[str, List[Citation]]
+) -> Dict[str, List[Citation]]:
+    """Deduplicate multi-verse citations so each unique citation appears ONLY on the last verse of its range.
+
+    If a discourse citation references e.g. 1 Ne. 1:18-20, BYU Citation Index indexes
+    that identical excerpt under verses 18, 19, and 20.
+    This function consolidates the citation so it only attaches to verse 20 (the last verse in the range),
+    recording the covered range on the Citation object (e.g. '18–20').
+    """
+    from collections import defaultdict
+
+    chap_cits: Dict[str, Dict[Tuple, List[Tuple[int, str, Citation]]]] = defaultdict(lambda: defaultdict(list))
+
+    for v_key, c_list in citation_dict.items():
+        parts = v_key.rsplit("-", 1)
+        if len(parts) != 2 or not parts[1].isdigit():
+            continue
+        ch_key = parts[0]
+        v_num = int(parts[1])
+        for c in c_list:
+            sig = (
+                (c.source, c.talk_id, c.target_id)
+                if (c.talk_id and c.target_id)
+                else (c.source, c.citation, c.speaker, c.talk_title)
+            )
+            chap_cits[ch_key][sig].append((v_num, v_key, c))
+
+    deduped: Dict[str, List[Citation]] = defaultdict(list)
+
+    for ch_key, sig_map in chap_cits.items():
+        for sig, vlist in sig_map.items():
+            vlist.sort(key=lambda x: x[0])
+            last_vnum, last_vkey, cit = vlist[-1]
+            v_nums = [x[0] for x in vlist]
+
+            if len(v_nums) > 1:
+                cit.covered_range = format_verse_numbers(v_nums)
+            elif not cit.covered_range:
+                cit.covered_range = str(last_vnum)
+
+
+            deduped[last_vkey].append(cit)
+
+    # Sort each verse's citations and preserve chapter canonical order
+    sorted_result: Dict[str, List[Citation]] = {}
+    for vk in sorted(
+        deduped.keys(),
+        key=lambda k: (k.rsplit("-", 1)[0], int(k.rsplit("-", 1)[1])),
+    ):
+        sorted_result[vk] = deduped[vk]
+
+    return sorted_result
+
+
 def fetch_verse_citations(
     b_id: int, b_slug: str, ch: int, v_str: str, session: requests.Session
 ) -> Tuple[str, List[Citation]]:
-    """Fetch citations for a specific verse from both 19th-century sources and TPJS."""
+    """Fetch citations for a specific verse from both 1830-1930 sources and TPJS."""
     verse_key = f"{b_slug}-{ch}-{v_str}"
     citations: List[Citation] = []
     seen = set()
 
-    # Query 1: All 1830-1900 sources
-    u1 = f"{BASE_URL}/Any/1830/1900/all/s/i/{b_id}/{ch}?verses={v_str}"
+    # Query 1: All 1830-1930 sources
+    u1 = f"{BASE_URL}/Any/1830/1930/all/s/i/{b_id}/{ch}?verses={v_str}"
     try:
         r1 = session.get(u1, timeout=12)
         soup1 = BeautifulSoup(r1.text, "html.parser")
@@ -184,7 +264,7 @@ def fetch_verse_citations(
                         seen.add(sig)
                         citations.append(cit)
     except Exception as e:
-        logger.debug(f"Error fetching 1830-1900 citations for {verse_key}: {e}")
+        logger.debug(f"Error fetching 1830-1930 citations for {verse_key}: {e}")
 
     # Query 2: TPJS
     u2 = f"{BASE_URL}/Any/1830/2026/T/s/i/{b_id}/{ch}?verses={v_str}"
@@ -217,10 +297,11 @@ def fetch_all_citations(
         logger.info(f"Loading early citations from cache: {cache_path}")
         with open(cache_path, "r", encoding="utf-8") as f:
             data = json.load(f)
-        return {
+        raw_dict = {
             v_key: [Citation.from_dict(c) for c in cit_list]
             for v_key, cit_list in data.items()
         }
+        return deduplicate_citations_to_last_verse(raw_dict)
 
     os.makedirs(os.path.dirname(cache_path), exist_ok=True)
     logger.info("Scanning all 239 Book of Mormon chapters for verses with early citations...")
@@ -233,8 +314,8 @@ def fetch_all_citations(
     def scan_chapter(item: Tuple[int, str, str, int]) -> List[Tuple[int, str, int, str]]:
         b_id, b_slug, b_name, ch = item
         found_verses = set()
-        # Scan 1830-1900
-        u1 = f"{BASE_URL}/Any/1830/1900/all/s/i/{b_id}/{ch}"
+        # Scan 1830-1930
+        u1 = f"{BASE_URL}/Any/1830/1930/all/s/i/{b_id}/{ch}"
         try:
             r1 = session.get(u1, timeout=12)
             soup1 = BeautifulSoup(r1.text, "html.parser")
@@ -292,6 +373,10 @@ def fetch_all_citations(
             if cits:
                 all_citations[v_key] = cits
 
+    # Deduplicate citations to last verse
+    all_citations = deduplicate_citations_to_last_verse(all_citations)
+
+
     # Serialize to cache
     serialized = {
         v_key: [c.to_dict() for c in cits] for v_key, cits in all_citations.items()
@@ -300,6 +385,7 @@ def fetch_all_citations(
         json.dump(serialized, f, ensure_ascii=False, indent=2)
 
     logger.info(
-        f"Successfully fetched and cached citations for {len(all_citations)} verses to {cache_path}"
+        f"Successfully fetched, deduplicated, and cached citations for {len(all_citations)} verses to {cache_path}"
     )
     return all_citations
+
