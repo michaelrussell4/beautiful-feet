@@ -3,16 +3,18 @@
 from __future__ import annotations
 import argparse
 import sys
+import json
 import logging
 import os
 import time
+from typing import Dict
 
 from .models import Book
 from .onoma_fetcher import fetch_all_onomasticon
 from .citation_fetcher import fetch_all_citations
 from .textual_variants import load_textual_variants
 from .text_parser import parse_book_of_mormon_md
-from .tagger import OnomaMatcher, CitationTagger, VariantTagger
+from .tagger import OnomaMatcher, CitationTagger, VariantTagger, RevisionTagger
 from .builder import build_study_epub
 
 logging.basicConfig(
@@ -55,6 +57,16 @@ def cmd_build(args: argparse.Namespace) -> None:
     variant_data = load_textual_variants()
     logger.info(f"Loaded {sum(len(vl) for vl in variant_data.values())} textual variants across {len(variant_data)} verses.")
 
+    logger.info("Loading 1830 First Edition text for inline revisions...")
+    bom_1830_path = "data/bom_1830.json"
+    bom_1830_data: Dict[str, str] = {}
+    if os.path.exists(bom_1830_path):
+        with open(bom_1830_path, "r", encoding="utf-8") as f:
+            bom_1830_data = json.load(f)
+        logger.info(f"Loaded {len(bom_1830_data):,} verses from 1830 First Edition.")
+    else:
+        logger.warning(f"1830 text file {bom_1830_path} not found. Skipping inline 1830 revisions.")
+
     # 2. Parse text
     logger.info(f"Parsing Book of Mormon text from {args.input}...")
     books = parse_book_of_mormon_md(args.input)
@@ -64,27 +76,33 @@ def cmd_build(args: argparse.Namespace) -> None:
 
     # 3. Initialize taggers
     logger.info("Compiling Onomasticon regex matcher and taggers...")
+    revision_tagger = RevisionTagger(bom_1830_data)
     onoma_matcher = OnomaMatcher(onoma_data)
     variant_tagger = VariantTagger(variant_data)
     citation_tagger = CitationTagger(cit_data)
 
     # 4. Tag chapters
-    logger.info("Tagging onomasticon entities, textual variants, and discourse citations...")
+    logger.info("Tagging 1830 revisions, onomasticon entities, textual variants, and discourse citations...")
+    total_rev_verses = 0
     total_onoma_tags = 0
     total_var_tags = 0
     total_cit_tags = 0
 
     for book in books:
         for ch in book.chapters:
+            r_count = revision_tagger.tag_chapter_revisions(ch)
             _, o_count = onoma_matcher.tag_chapter_verses(ch)
             v_count = variant_tagger.tag_chapter_variants(ch)
             c_count = citation_tagger.tag_chapter_citations(ch)
+            total_rev_verses += r_count
             total_onoma_tags += o_count
             total_var_tags += v_count
             total_cit_tags += c_count
 
     logger.info(
-        f"Tagging complete: {total_onoma_tags} Onomasticon references, {total_var_tags} Textual Variants, {total_cit_tags} Citation references injected."
+        f"Tagging complete: {total_rev_verses:,} verses with 1830 revisions, "
+        f"{total_onoma_tags:,} Onomasticon references, {total_var_tags:,} Textual Variants, "
+        f"{total_cit_tags:,} Citation references injected."
     )
 
     # 5. Build EPUB with Scholarly Appendices

@@ -3,6 +3,8 @@
 from __future__ import annotations
 import re
 from typing import Dict, List, Set, Tuple
+from difflib import SequenceMatcher
+import html
 import regex
 
 from .models import Book, Chapter, Verse, OnomaEntry, Citation, TextualVariant
@@ -15,6 +17,124 @@ def slugify_lemma(lemma: str) -> str:
     slug = re.sub(r"[^\w\s-]", "", slug)
     slug = re.sub(r"[\s_]+", "-", slug).strip("-")
     return slug
+
+
+def generate_verse_revision(t_1830: str, t_mod: str) -> str:
+    """Generate inline strikethrough/revision markup comparing the 1830 First Edition against the modern text.
+
+    - Word-level substantive changes: differences in words are highlighted.
+    - Typesetter punctuation, hyphenation, and capitalization adjustments from 1830 are ignored.
+    - 1830 words that were deleted or replaced are wrapped in <del class="diff-1830">...</del>.
+    - Modern words that replace or are added to 1830 are wrapped in <ins class="diff-modern">...</ins>.
+    - Verses with identical words are emitted cleanly without diff markup.
+    """
+    word_pattern = re.compile(r"[A-Za-z0-9]+(?:['’\-][A-Za-z0-9]+)*")
+
+    matches_1830 = list(word_pattern.finditer(t_1830))
+    matches_mod = list(word_pattern.finditer(t_mod))
+
+    norm_1830 = [m.group(0).lower() for m in matches_1830]
+    norm_mod = [m.group(0).lower() for m in matches_mod]
+
+    # If words are identical, return the modern text directly (XML-safe)
+    if norm_1830 == norm_mod:
+        return html.escape(t_mod, quote=False)
+
+    sm = SequenceMatcher(None, norm_1830, norm_mod)
+    opcodes = sm.get_opcodes()
+
+    out: List[str] = []
+    mod_cursor = 0
+
+    for tag, i1, i2, j1, j2 in opcodes:
+        if tag == "equal":
+            if j1 < j2:
+                end_pos = matches_mod[j2 - 1].end()
+                out.append(html.escape(t_mod[mod_cursor:end_pos], quote=False))
+                mod_cursor = end_pos
+
+        elif tag == "replace":
+            start_pos = matches_mod[j1].start()
+            if mod_cursor < start_pos:
+                out.append(html.escape(t_mod[mod_cursor:start_pos], quote=False))
+                mod_cursor = start_pos
+
+            del_words = html.escape(
+                " ".join(matches_1830[k].group(0) for k in range(i1, i2)), quote=False
+            )
+            end_pos = matches_mod[j2 - 1].end()
+            rep_mod_text = html.escape(t_mod[start_pos:end_pos], quote=False)
+
+            out.append(
+                f'<del class="diff-1830">{del_words}</del> <ins class="diff-modern">{rep_mod_text}</ins>'
+            )
+            mod_cursor = end_pos
+
+        elif tag == "delete":
+            del_words = html.escape(
+                " ".join(matches_1830[k].group(0) for k in range(i1, i2)), quote=False
+            )
+            out.append(f'<del class="diff-1830">{del_words}</del> ')
+
+        elif tag == "insert":
+            start_pos = matches_mod[j1].start()
+            if mod_cursor < start_pos:
+                out.append(html.escape(t_mod[mod_cursor:start_pos], quote=False))
+                mod_cursor = start_pos
+            end_pos = matches_mod[j2 - 1].end()
+            ins_mod_text = html.escape(t_mod[start_pos:end_pos], quote=False)
+            out.append(f'<ins class="diff-modern">{ins_mod_text}</ins>')
+            mod_cursor = end_pos
+
+    if mod_cursor < len(t_mod):
+        out.append(html.escape(t_mod[mod_cursor:], quote=False))
+
+    res = "".join(out)
+    res = re.sub(r" +", " ", res)
+    res = re.sub(r"\s+([,;:.\?!])", r"\1", res)
+    return res
+
+
+def replace_outside_del_tags(html_text: str, pattern: re.Pattern, repl_fn) -> str:
+    """Apply regex replacement to text chunks in an HTML string, skipping text inside <del>...</del>."""
+    parts = re.split(r"(<[^>]+>)", html_text)
+    in_del = False
+    new_parts: List[str] = []
+    for p in parts:
+        if p.startswith("<"):
+            if p.startswith("<del"):
+                in_del = True
+            elif p.startswith("</del>"):
+                in_del = False
+            new_parts.append(p)
+        else:
+            if in_del or not p:
+                new_parts.append(p)
+            else:
+                new_parts.append(pattern.sub(repl_fn, p))
+    return "".join(new_parts)
+
+
+class RevisionTagger:
+    """Injects inline strikethrough/revision markup comparing against the 1830 First Edition."""
+
+    def __init__(self, bom_1830_dict: Dict[str, str]):
+        self.bom_1830_dict = bom_1830_dict
+
+    def tag_chapter_revisions(self, chapter: Chapter) -> int:
+        """Inject 1830 revisions into chapter.verses tagged_html. Returns count of verses with revisions."""
+        rev_count = 0
+        for verse in chapter.verses:
+            t_1830 = self.bom_1830_dict.get(verse.verse_key)
+            if not t_1830:
+                verse.tagged_html = html.escape(verse.text, quote=False)
+                continue
+
+            rev_html = generate_verse_revision(t_1830, verse.text)
+            if "<del" in rev_html or "<ins" in rev_html:
+                rev_count += 1
+            verse.tagged_html = rev_html
+        return rev_count
 
 
 class OnomaMatcher:
@@ -79,7 +199,11 @@ class OnomaMatcher:
         total_tagged = 0
 
         for verse in chapter.verses:
-            verse_text = verse.text
+            verse_html = (
+                verse.tagged_html
+                if verse.tagged_html
+                else html.escape(verse.text, quote=False)
+            )
 
             def replace_entity(match: re.Match) -> str:
                 nonlocal total_tagged
@@ -107,7 +231,9 @@ class OnomaMatcher:
 
                 return full_token
 
-            verse.tagged_html = self.regex.sub(replace_entity, verse_text)
+            verse.tagged_html = replace_outside_del_tags(
+                verse_html, self.regex, replace_entity
+            )
 
         chapter.onoma_entries = chapter_onoma
         return chapter_onoma, total_tagged

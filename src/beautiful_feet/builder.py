@@ -118,6 +118,23 @@ span.verse-num {
     line-height: 1;
 }
 
+/* Inline 1830 Textual Revision */
+del.diff-1830 {
+    text-decoration: line-through;
+    color: #9c2727;
+    background-color: #fcedeb;
+    padding: 0 0.15em;
+    border-radius: 2px;
+}
+
+ins.diff-modern {
+    text-decoration: none;
+    color: #1b5e20;
+    background-color: #edf7ed;
+    padding: 0 0.12em;
+    border-radius: 2px;
+}
+
 /* Noteref Footnote Links */
 a.noteref {
     text-decoration: none;
@@ -609,6 +626,14 @@ div.ornament {
         background-color: #1e1e1e;
         border-color: #333333;
     }
+    del.diff-1830 {
+        color: #ef9a9a;
+        background-color: #3e1b1b;
+    }
+    ins.diff-modern {
+        color: #a5d6a7;
+        background-color: #1b3320;
+    }
 }
 
 """
@@ -920,9 +945,9 @@ def render_title_page_xhtml() -> str:
   <section epub:type="titlepage" class="titlepage-section">
     <div style="text-align: center; margin-top: 2.5em; margin-bottom: 2em;">
       <h1 class="title-main">The Book of Mormon</h1>
-      <h2 class="title-sub">Early-Source &amp; Onomasticon Study Edition</h2>
+      <h2 class="title-sub">1830 Textual Revisions &amp; Early-Source Study Edition</h2>
       
-      <div class="ornament">&#10087; &bull; &#10086; &bull; &#10087;</div>
+      <div class="ornament">&#10087; &#8226; &#10086; &#8226; &#10087;</div>
       
       <p style="font-size: 1.1em; color: #444; margin-top: 1.5em; font-style: italic;">
         An Account Written by the Hand of Mormon<br />
@@ -934,10 +959,11 @@ def render_title_page_xhtml() -> str:
       </p>
       
       <div style="margin-top: 3.5em; padding-top: 1.5em; border-top: 1px solid #dcd3c5; font-size: 0.88em; color: #777;">
-        <p>Featuring in-place lexical etymologies from the <em>Book of Mormon Onomasticon</em>,<br />
-        verbatim historical discourse excerpts from the <em>BYU Scripture Citation Index</em> (1830&ndash;1930),<br />
-        and textual variants from the 1830 First Edition &amp; Manuscripts.</p>
-        <p style="margin-top: 1em;">Beautiful Feet Press &bull; Scholarly Study Series</p>
+        <p>Featuring inline 1830 First Edition textual revisions,<br />
+        in-place lexical etymologies from the <em>Book of Mormon Onomasticon</em>,<br />
+        verbatim historical discourse excerpts from the <em>BYU Scripture Citation Index</em> (1830&#8211;1930),<br />
+        and landmark textual variants from the 1830 First Edition &amp; Manuscripts.</p>
+        <p style="margin-top: 1em;">Beautiful Feet Press &#8226; Scholarly Study Series</p>
       </div>
     </div>
   </section>
@@ -956,21 +982,24 @@ def render_intro_xhtml() -> str:
 </head>
 <body>
   <section epub:type="frontmatter" class="intro-section">
-    <h1 class="book-title">Reader&rsquo;s Guide</h1>
-    <div class="ornament">&#10087; &bull; &#10086; &bull; &#10087;</div>
+    <h1 class="book-title">Reader&#8217;s Guide</h1>
+    <div class="ornament">&#10087; &#8226; &#10086; &#8226; &#10087;</div>
     
     <div class="intro-box">
       <h3>About this Scholarly Study Edition</h3>
-      <p>This edition integrates three primary research dimensions directly into the sacred text of the Book of Mormon, formatted specifically for Kindle e-readers and modern digital devices:</p>
+      <p>This edition integrates four primary research dimensions directly into the sacred text of the Book of Mormon, formatted specifically for Kindle e-readers and modern digital devices:</p>
       <ol>
+        <li>
+          <strong>Inline 1830 First Edition Revisions:</strong> Where the modern text differs in wording from the Palmyra 1830 First Edition, earlier 1830 readings are displayed inline in strikethrough text (<del class="diff-1830">example</del>), followed immediately by the modern reading (<ins class="diff-modern">example</ins>). This allows the reader to observe how the text evolved from the original 1830 printing to the present day without flipping back and forth between editions.
+        </li>
         <li>
           <strong>Book of Mormon Onomasticon:</strong> Proper names and geographical designations are tagged on their initial occurrence in each chapter with a blue asterisk (<span style="color:#0b5394; font-weight:bold;">*</span>). Tapping opens a modal note providing the canonical lemma, IPA pronunciation, historical classification, definition, and synthesized Semitic / Egyptian etymological roots.
         </li>
         <li>
-          <strong>Textual Variants (1830 First Edition &amp; Manuscripts):</strong> Significant historical and doctrinal variants are marked with an amber badge (<span style="color:#b8860b; font-weight:bold;">[v]</span>). These display a direct comparative analysis between the 1830 typesetting, Oliver Cowdery&rsquo;s manuscripts, and the modern text, grounded in Royal Skousen&rsquo;s <em>Book of Mormon Critical Text Project</em>.
+          <strong>Textual Variants (1830 First Edition &amp; Manuscripts):</strong> Significant historical and doctrinal variants are marked with an amber badge (<span style="color:#b8860b; font-weight:bold;">[v]</span>). These display a direct comparative analysis between the 1830 typesetting, Oliver Cowdery&#8217;s manuscripts, and the modern text, grounded in Royal Skousen&#8217;s <em>Book of Mormon Critical Text Project</em>.
         </li>
         <li>
-          <strong>Historical Discourse Excerpts (1830&ndash;1930):</strong> Verses expounded by early Church leaders are marked with crimson numbered citations (<span style="color:#990000; font-weight:bold;">[1]</span>). Unlike traditional bare cross-references, each footnote features the <em>verbatim 1&ndash;3 paragraph discourse excerpt</em> from the <em>Journal of Discourses</em> (1854&ndash;1886) or <em>Teachings of the Prophet Joseph Smith</em> (TPJS). When a discourse addresses a span of verses, the note is placed on the concluding verse of the passage with the full covered range identified. Readers can read the exact theological commentary delivered by Joseph Smith, Brigham Young, John Taylor, Orson Pratt, and Wilford Woodruff on that specific passage.
+          <strong>Historical Discourse Excerpts (1830&#8211;1930):</strong> Verses expounded by early Church leaders are marked with crimson numbered citations (<span style="color:#990000; font-weight:bold;">[1]</span>). Unlike traditional bare cross-references, each footnote features the <em>verbatim 1&#8211;3 paragraph discourse excerpt</em> from the <em>Journal of Discourses</em> (1854&#8211;1886) or <em>Teachings of the Prophet Joseph Smith</em> (TPJS). When a discourse addresses a span of verses, the note is placed on the concluding verse of the passage with the full covered range identified. Readers can read the exact theological commentary delivered by Joseph Smith, Brigham Young, John Taylor, Orson Pratt, and Wilford Woodruff on that specific passage.
         </li>
       </ol>
     </div>
@@ -979,7 +1008,7 @@ def render_intro_xhtml() -> str:
     <h3 class="footnotes-title">Scholarly Back-Matter (Appendices)</h3>
     <ul class="cit-list" style="line-height: 1.6;">
       <li><strong>Appendix A: Historical Speaker &amp; Source Index:</strong> Biographical register and comprehensive scriptural citation catalog of all early Church leaders cited across the volume.</li>
-      <li><strong>Appendix B: Complete Onomasticon Lexicon &amp; Name Gazetteer:</strong> Complete A&ndash;Z dictionary of all 376 proper names and geographical terms in the Nephite and Jaredite records.</li>
+      <li><strong>Appendix B: Complete Onomasticon Lexicon &amp; Name Gazetteer:</strong> Complete A&#8211;Z dictionary of all 376 proper names and geographical terms in the Nephite and Jaredite records.</li>
       <li><strong>Appendix C: Chronology, Plates &amp; Translation Overview:</strong> Master timeline from the Tower of Babel to Moroni, diagram of the plate archives, and the 1829 translation history.</li>
     </ul>
 
@@ -1003,13 +1032,13 @@ def build_study_epub(
     book = epub.EpubBook()
     book_id = f"urn:uuid:{uuid.uuid4()}"
     book.set_identifier(book_id)
-    book.set_title("The Book of Mormon: Early-Source & Onomasticon Study Edition")
+    book.set_title("The Book of Mormon: 1830 Textual Revisions & Early-Source Study Edition")
     book.set_language("en")
     book.add_author("Translated by Joseph Smith, Jun.")
     book.add_metadata(
         "DC",
         "description",
-        "A scholarly study edition of the Book of Mormon featuring in-place lexical etymologies from the Book of Mormon Onomasticon, 19th-century verbatim discourse excerpts from the BYU Scripture Citation Index, and textual variants from the 1830 First Edition & Manuscripts.",
+        "A comprehensive scholarly study edition of the Book of Mormon featuring inline 1830 First Edition textual revisions with strikethrough markup, in-place lexical etymologies from the Book of Mormon Onomasticon, 19th-century verbatim discourse excerpts from the BYU Scripture Citation Index (1830–1930), and landmark textual variants from the 1830 First Edition & Manuscripts.",
     )
     book.add_metadata("DC", "publisher", "Beautiful Feet Press")
 
@@ -1037,7 +1066,7 @@ def build_study_epub(
 </head>
 <body>
   <div class="cover-wrapper">
-    <img class="cover-image" src="images/cover.jpg" alt="The Book of Mormon: Early-Source &amp; Onomasticon Study Edition" />
+    <img class="cover-image" src="images/cover.jpg" alt="The Book of Mormon: 1830 Textual Revisions &amp; Early-Source Study Edition" />
   </div>
 </body>
 </html>"""
