@@ -77,3 +77,100 @@ def test_render_intro_xhtml_validity():
     root = ET.fromstring(intro_xhtml)
     assert root.tag.endswith("html")
     assert "Inline 1830 First Edition Revisions" in intro_xhtml
+
+
+def test_render_chapter_footnotes_layout_and_titles():
+    """Verify footnotes have no top return link, have bottom return link, and start with explanatory titles."""
+    from beautiful_feet.models import OnomaEntry, Citation
+    ch = Chapter(
+        book_slug="1-ne",
+        book_title="First Book of Nephi",
+        chapter_num=1,
+        chapter_key="1-ne-1",
+        verses=[
+            Verse(
+                verse_key="1-ne-1-1",
+                book_slug="1-ne",
+                chapter_num=1,
+                verse_num=1,
+                text="I, Nephi...",
+                tagged_html="I, Nephi...",
+            )
+        ],
+        onoma_entries={
+            "nephi": OnomaEntry(
+                lemma="Nephi",
+                raw_title="NEPHI",
+                classification="Lehite PN, Lehite GN, Lehite Gentilic, Lehite Title",
+                pronunciation="niːfaɪ",
+                etymology_paragraphs=[
+                    "First paragraph of etymology proposal.",
+                    "Second paragraph with Egyptian nfr.",
+                    "Third paragraph discussing West Semitic roots.",
+                ],
+            )
+        },
+        citation_map={
+            "1-ne-1-1": [
+                Citation(
+                    speaker="Brigham Young",
+                    source="Journal of Discourses",
+                    citation="JD 1:123",
+                    year=1853,
+                    excerpt="Excerpt text on verse 1.",
+                )
+            ]
+        },
+    )
+
+    xhtml = render_chapter_xhtml(ch)
+
+    # 1. Verify XML validity
+    root = ET.fromstring(xhtml)
+    assert root.tag.endswith("html")
+
+    # 2. Verify NO top return links
+    assert "fn-nav-top" not in xhtml
+
+    # 3. Verify bottom return links exist
+    assert "fn-nav-bottom" in xhtml
+    assert 'class="return-link" title="Return to verse 1">Return to verse 1 &#8617;</a>' in xhtml
+
+    # 4. Verify onomasticon title and body paragraphs
+    assert '<p class="onoma-title">Name Meaning of Nephi</p>' in xhtml
+    assert '<span class="onoma-class">Lehite PN, Lehite GN, Lehite Gentilic, Lehite Title</span>' in xhtml
+    assert '<p class="onoma-p">First paragraph of etymology proposal.</p>' in xhtml
+    assert '<p class="onoma-p">Second paragraph with Egyptian nfr.</p>' in xhtml
+    assert '<p class="onoma-p">Third paragraph discussing West Semitic roots.</p>' in xhtml
+
+    # 5. Verify citation header
+    assert '<p class="cit-header">Early Historical Discourses on Verse 1:</p>' in xhtml
+
+
+def test_render_onomasticon_appendix_paragraphs():
+    """Verify Appendix B renders all etymology paragraphs as separate paragraphs."""
+    from beautiful_feet.models import OnomaEntry
+    from beautiful_feet.appendices import render_onoma_gazetteer_xhtml
+
+    entries = {
+        "NEPHI": OnomaEntry(
+            lemma="Nephi",
+            raw_title="NEPHI",
+            classification="Lehite PN, Lehite GN",
+            pronunciation="niːfaɪ",
+            etymology_paragraphs=[
+                "First proposal paragraph.",
+                "Second proposal paragraph.",
+            ],
+        )
+    }
+    appendix_xhtml = render_onoma_gazetteer_xhtml(entries)
+    # Validate with ET after substituting XHTML named entities
+    valid_xml = appendix_xhtml.replace("&bull;", "&#8226;")
+    root = ET.fromstring(valid_xml)
+    assert root.tag.endswith("html")
+
+    assert "First proposal paragraph." in appendix_xhtml
+    assert "Second proposal paragraph." in appendix_xhtml
+    assert '<span class="onoma-class"' in appendix_xhtml
+    assert "Lehite PN, Lehite GN" in appendix_xhtml

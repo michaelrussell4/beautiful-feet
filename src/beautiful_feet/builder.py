@@ -220,14 +220,6 @@ aside.var-footnote {
 }
 
 /* Footnote Navigation Links */
-.fn-nav-top {
-    font-size: 0.82em;
-    margin: 0 0 0.85em 0;
-    padding-bottom: 0.45em;
-    border-bottom: 1px dashed #d5ccbe;
-    text-align: left;
-}
-
 .fn-nav-bottom {
     font-size: 0.84em;
     margin: 1.1em 0 0 0;
@@ -236,22 +228,18 @@ aside.var-footnote {
     text-align: right;
 }
 
-aside.onoma-footnote .fn-nav-top,
 aside.onoma-footnote .fn-nav-bottom {
     border-color: #c4d7e8;
 }
 
-aside.cit-footnote .fn-nav-top,
 aside.cit-footnote .fn-nav-bottom {
     border-color: #ecd2d2;
 }
 
-aside.var-footnote .fn-nav-top,
 aside.var-footnote .fn-nav-bottom {
     border-color: #ebdcb6;
 }
 
-.fn-nav-top a.return-link,
 .fn-nav-bottom a.return-link {
     display: inline-block;
     padding: 0.15em 0.55em;
@@ -263,19 +251,16 @@ aside.var-footnote .fn-nav-bottom {
     letter-spacing: 0.01em;
 }
 
-aside.cit-footnote .fn-nav-top a.return-link,
 aside.cit-footnote .fn-nav-bottom a.return-link {
     background-color: #fcebeb;
     color: #8c1010;
 }
 
-aside.var-footnote .fn-nav-top a.return-link,
 aside.var-footnote .fn-nav-bottom a.return-link {
     background-color: #fef7e6;
     color: #8c6800;
 }
 
-.fn-nav-top a.return-link:hover,
 .fn-nav-bottom a.return-link:hover {
     text-decoration: underline;
 }
@@ -288,6 +273,13 @@ a.return-link {
 }
 
 /* Onomasticon Entry Components */
+
+p.onoma-title {
+    font-weight: bold;
+    color: #0b5394;
+    margin: 0 0 0.4em 0;
+    font-size: 0.98em;
+}
 
 .onoma-header {
     margin-bottom: 0.35em;
@@ -327,9 +319,23 @@ p.onoma-def {
     font-style: italic;
 }
 
-p.onoma-summary {
-    margin: 0.3em 0 0 0;
+.onoma-body {
+    margin-top: 0.45em;
+}
+
+.onoma-p, p.onoma-summary {
+    margin: 0.45em 0;
+    line-height: 1.5;
     color: #222222;
+    font-size: 0.94em;
+}
+
+.onoma-p:first-child {
+    margin-top: 0.2em;
+}
+
+.onoma-p:last-child {
+    margin-bottom: 0.2em;
 }
 
 /* Citation Entry Components */
@@ -585,35 +591,38 @@ div.ornament {
         color: #ffb4a2;
         border-color: #632d2d;
     }
-    .fn-nav-top, .fn-nav-bottom {
+    .fn-nav-bottom {
         border-color: #3e3e3e;
     }
-    aside.onoma-footnote .fn-nav-top, aside.onoma-footnote .fn-nav-bottom {
+    aside.onoma-footnote .fn-nav-bottom {
         border-color: #22384c;
     }
-    aside.cit-footnote .fn-nav-top, aside.cit-footnote .fn-nav-bottom {
+    aside.cit-footnote .fn-nav-bottom {
         border-color: #4c2222;
     }
-    aside.var-footnote .fn-nav-top, aside.var-footnote .fn-nav-bottom {
+    aside.var-footnote .fn-nav-bottom {
         border-color: #443b1e;
     }
-    .fn-nav-top a.return-link,
     .fn-nav-bottom a.return-link {
         background-color: #1e2c3a;
         color: #8ab4f8;
     }
-    aside.cit-footnote .fn-nav-top a.return-link,
     aside.cit-footnote .fn-nav-bottom a.return-link {
         background-color: #3c1a1a;
         color: #ff8a80;
     }
-    aside.var-footnote .fn-nav-top a.return-link,
     aside.var-footnote .fn-nav-bottom a.return-link {
         background-color: #383015;
         color: #ffd54f;
     }
     a.return-link {
         color: #8ab4f8;
+    }
+    p.onoma-title {
+        color: #8ab4f8;
+    }
+    .onoma-p {
+        color: #dddddd;
     }
     strong.cit-verse-highlight {
         color: #ff9e80;
@@ -770,12 +779,29 @@ def render_chapter_xhtml(chapter: Chapter) -> str:
 
                 lines.extend([
                     f'      <aside epub:type="footnote" id="{fn_id}" class="footnote-item onoma-footnote">',
-                    f'        <p class="fn-nav-top"><a href="#{ref_id}" class="return-link" title="Return to {v_label}">&#8617; Return to {v_label}</a></p>',
+                    f'        <p class="onoma-title">Name Meaning of {lemma_esc}</p>',
                     '        <div class="onoma-header">',
                     f'          <span class="onoma-lemma">{lemma_esc}</span>{pron_html}{class_html}',
                     "        </div>",
-                    f"        {def_html}" if def_html else "",
-                    f'        <p class="onoma-summary">{summary_esc}</p>',
+                ])
+                if def_html:
+                    lines.append(f"        {def_html}")
+
+                lines.append('        <div class="onoma-body">')
+                if entry.etymology_paragraphs:
+                    for p in entry.etymology_paragraphs:
+                        p_esc = html.escape(p)
+                        lines.append(f'          <p class="onoma-p">{p_esc}</p>')
+                elif entry.summary:
+                    for p in entry.summary.split("\n\n"):
+                        p_esc = html.escape(p.strip())
+                        if p_esc:
+                            lines.append(f'          <p class="onoma-p">{p_esc}</p>')
+                else:
+                    lines.append('          <p class="onoma-p">No additional notes.</p>')
+                lines.append('        </div>')
+
+                lines.extend([
                     f'        <p class="fn-nav-bottom"><a href="#{ref_id}" class="return-link" title="Return to {v_label}">Return to {v_label} &#8617;</a></p>',
                     "      </aside>",
                 ])
@@ -804,7 +830,6 @@ def render_chapter_xhtml(chapter: Chapter) -> str:
 
                     lines.extend([
                         f'      <aside epub:type="footnote" id="{fn_id}" class="footnote-item var-footnote">',
-                        f'        <p class="fn-nav-top"><a href="#{ref_id}" class="return-link" title="Return to verse {v_num_str}">&#8617; Return to verse {v_num_str}</a></p>',
                         '        <div class="var-header">',
                         f'          <span class="var-label">Textual Variant:</span> <span class="var-phrase">&ldquo;{phrase_esc}&rdquo;</span>',
                         "        </div>",
@@ -853,7 +878,6 @@ def render_chapter_xhtml(chapter: Chapter) -> str:
 
                 lines.extend([
                     f'      <aside epub:type="footnote" id="{fn_id}" class="footnote-item cit-footnote">',
-                    f'        <p class="fn-nav-top"><a href="#{ref_id}" class="return-link" title="Return to verse {v_num_str}">&#8617; Return to verse {v_num_str}</a></p>',
                     f'        <p class="cit-header">{header_label}</p>',
                     '        <div class="cit-discourse-list">',
                 ])
@@ -889,7 +913,7 @@ def render_chapter_xhtml(chapter: Chapter) -> str:
 
                     lines.extend([
                         '          <div class="cit-discourse-item">',
-                        f'            <div class="cit-meta">{speaker_html} &bull; {source_html} {cit_str_html} {year_html}{range_badge}</div>',
+                        f'            <div class="cit-meta">{speaker_html} &#8226; {source_html} {cit_str_html} {year_html}{range_badge}</div>',
                         f"{title_html}" if title_html else "",
                     ])
 

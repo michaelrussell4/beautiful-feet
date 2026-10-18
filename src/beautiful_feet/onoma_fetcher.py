@@ -64,12 +64,12 @@ def to_title_case_name(name: str) -> str:
 
 
 def _clean_onoma_text(txt: str) -> str:
-    txt = re.sub(r"\[\d+\]", "", txt)  # remove [1], [2]
+    txt = re.sub(r"\[\s*\d+\s*\]", "", txt)  # remove [1], [ 12 ], etc.
     txt = re.sub(r"Deseret Alphabet\s*:\s*[^\s.]+(?:\s*\([^)]*\))?", "", txt, flags=re.I)
     txt = re.sub(r"the Deseret Alphabet transcriptions are identical", "their historical phonetic transcriptions are identical", txt, flags=re.I)
     txt = re.sub(r"according to the Deseret Alphabet spelling, has", "in historical phonetic transcription, has", txt, flags=re.I)
     txt = re.sub(
-        r"and the Deseret Alphabet spelling of the PN [A-Z ]+,, \(IPA:[^)]+\), and, \(IPA:[^)]+\), suggest",
+        r"and the Deseret Alphabet spelling of the PN [A-Z ]+,*\s*(?:\(IPA:[^)]+\),*\s*)*(?:and,*\s*(?:\(IPA:[^)]+\),*\s*)*)?suggest",
         "and historical phonetic transcriptions (IPA) suggest",
         txt,
         flags=re.I,
@@ -93,75 +93,101 @@ def parse_onoma_page(title: str, session: Optional[requests.Session] = None) -> 
     try:
         r = s.get(
             BASE_URL,
-            params={"action": "parse", "page": title, "prop": "text", "format": "json"},
+            params={"action": "parse", "page": title, "prop": "text", "format": "json", "redirects": 1},
             timeout=15,
         )
-        html = r.json().get("parse", {}).get("text", {}).get("*", "")
+        data = r.json()
+        html = data.get("parse", {}).get("text", {}).get("*", "")
         if not html:
             return None
 
+        # Check for cross-reference like "This name is treated under <a ...>NAME</a>"
+        m_treated = re.search(r"treated under\s*<a\s+[^>]*title=[\"']([^\"']+)[\"']", html, re.I)
+        if m_treated:
+            target = m_treated.group(1)
+            r = s.get(
+                BASE_URL,
+                params={"action": "parse", "page": target, "prop": "text", "format": "json", "redirects": 1},
+                timeout=15,
+            )
+            html = r.json().get("parse", {}).get("text", {}).get("*", "") or html
+
         soup = BeautifulSoup(html, "html.parser")
 
-        # 1. Classification & Definition from table
-        classification = ""
-        definition = ""
+        # 1. Classification from table (list of distinct types of entities)
+        classes = []
         table = soup.find("table", class_="wikitable")
         if table:
-            tds = table.find_all("td")
-            if tds:
-                classification = tds[0].get_text(" ", strip=True)
-                classification = re.sub(r"\s+", " ", classification)
-                if len(tds) > 1:
-                    def_parts = [td.get_text(" ", strip=True) for td in tds[1:]]
-                    definition = " ".join(def_parts)
-                    definition = re.sub(r"\s+", " ", definition)
+            for tr in table.find_all("tr"):
+                tds = tr.find_all(["td", "th"])
+                if not tds:
+                    continue
+                txt = tds[0].get_text(" ", strip=True)
+                txt = re.sub(r"\s+", " ", txt).strip()
+                if txt and not re.match(r"^\d+\.?$", txt) and txt not in classes:
+                    classes.append(txt)
+        classification = ", ".join(classes)
+        # We deliberately do not store exhaustive scriptural citations from the table as definition
+        definition = ""
 
         # 2. Pronunciation (IPA)
         deseret = ""
         pronunciation = ""
 
-        # Check IPA in parentheses, e.g. (IPA /niːfaɪ/) or (niːfaɪ)
-        m_pron = re.findall(r"\((?:IPA\s*)?/?([a-zæɑɔəɛɪʊʌθðʃʒŋʔːˈˌ]{3,25})/?\)", html, re.I)
-        if m_pron:
-            pronunciation = m_pron[0].strip()
-
+        m_des = re.search(r"[\U00010400-\U0001044F]+\s*\(([a-zæɑɔəɛɪʊʌθðʃʒŋʔːˈˌ\s/]+)\)", html)
+        if m_des:
+            pronunciation = m_des.group(1).strip().strip("/")
         if not pronunciation:
-            m_ipa = re.search(r"\(IPA\s+/?([^/)]+)/?\)", html)
-            if not m_ipa:
-                m_ipa = re.search(r"IPA\s+/?([^/\s<,]+)/?", html)
-            if not m_ipa:
-                m_ipa = re.search(r"/([a-zæɑɔəɛɪʊʌθðʃʒŋʔːˈˌ]{3,20})/", html)
+            m_ipa = re.search(r"\(IPA:\s*(?:<i>)?([a-zæɑɔəɛɪʊʌθðʃʒŋʔːˈˌ/]+)", html)
             if m_ipa:
-                pronunciation = m_ipa.group(1).strip()
+                pronunciation = m_ipa.group(1).strip().strip("/")
+        if not pronunciation:
+            m_pron = re.findall(r"\((?:IPA\s*)?/?([a-zæɑɔəɛɪʊʌθðʃʒŋʔːˈˌ]{3,25})/?\)", html)
+            for cand in m_pron:
+                if cand.lower() not in ["passive", "active", "plural", "singular"]:
+                    pronunciation = cand.strip().strip("/")
+                    break
+        if not pronunciation:
+            m_slash = re.search(r"/([a-zæɑɔəɛɪʊʌθðʃʒŋʔːˈˌ]{3,20})/", html)
+            if m_slash:
+                pronunciation = m_slash.group(1).strip().strip("/")
 
-        # 3. Etymology Summary
+        # 3. Etymology Paragraphs
         etym_paras = []
+        stop_re = re.compile(
+            r"^(variants|notes|bibliography|references|see also|external links|name index|key to abbreviations)",
+            re.I,
+        )
         etym_header = soup.find(
             lambda tag: tag.name in ["h2", "h3", "p", "b"] and "Etymology" in tag.get_text()
         )
+        curr = None
         if etym_header:
             curr = etym_header.parent if etym_header.name == "b" else etym_header
             curr = curr.find_next_sibling()
-            while curr and len(etym_paras) < 3:
-                if curr.name in ["h2", "h3"]:
-                    break
-                if curr.name == "p":
-                    txt = _clean_onoma_text(curr.get_text(" ", strip=True))
-                    if (
-                        len(txt) > 25
-                        and not txt.startswith("Jump to navigation")
-                        and not txt.startswith("Contents")
-                    ):
-                        etym_paras.append(txt)
-                curr = curr.find_next_sibling()
+        elif table:
+            curr = table.find_next_sibling()
 
-        summary = " ".join(etym_paras[:2])
-        if not summary:
-            for p in soup.find_all("p"):
-                txt = _clean_onoma_text(p.get_text(" ", strip=True))
-                if len(txt) > 30 and not txt.startswith("Jump to navigation"):
-                    summary = txt
+        while curr:
+            tag_name = curr.name
+            if tag_name in ["h2", "h3", "h4"]:
+                break
+            if tag_name == "p":
+                clean_p = curr.get_text(" ", strip=True)
+                if stop_re.match(clean_p) and len(clean_p) < 40:
                     break
+                txt = _clean_onoma_text(clean_p)
+                if (
+                    len(txt) > 5
+                    and not txt.startswith("Jump to navigation")
+                    and not txt.startswith("Contents")
+                ):
+                    etym_paras.append(txt)
+            elif tag_name in ["ol", "ul"] and "references" in curr.get("class", []):
+                break
+            curr = curr.find_next_sibling()
+
+        summary = "\n\n".join(etym_paras)
 
         cleaned = clean_lemma(title)
         return OnomaEntry(

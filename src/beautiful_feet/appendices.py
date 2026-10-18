@@ -260,7 +260,7 @@ def render_onoma_gazetteer_xhtml(onoma_dict: Dict[str, OnomaEntry]) -> str:
         '  <section epub:type="appendix" class="appendix-section">',
         '    <h1 class="book-title">Appendix B</h1>',
         '    <h2 class="chapter-title">Complete Onomasticon Lexicon &amp; Gazetteer</h2>',
-        '    <div class="ornament">&#10087; &bull; &#10086; &bull; &#10087;</div>',
+        '    <div class="ornament">&#10087; &#8226; &#10086; &#8226; &#10087;</div>',
         "",
         '    <div class="intro-box">',
         '      <h3>Linguistic Structure of Book of Mormon Proper Names</h3>',
@@ -269,7 +269,7 @@ def render_onoma_gazetteer_xhtml(onoma_dict: Dict[str, OnomaEntry]) -> str:
         "        catalogs and analyzes every proper name, geographical designation, and specialized term ",
         "        within the Nephite, Lamanite, and Jaredite records. Rather than arbitrary inventions, ",
         "        these 376 terms demonstrate profound Semitic (Hebrew, Aramaic), Egyptian, and ancient Near Eastern ",
-        "        etymological roots consistent with Lehi&rsquo;s 600 BC Jerusalem heritage and King Mosiah&rsquo;s ",
+        "        etymological roots consistent with Lehi&#8217;s 600 BC Jerusalem heritage and King Mosiah&#8217;s ",
         "        records in reformed Egyptian.",
         "      </p>",
         "      <p>",
@@ -287,11 +287,11 @@ def render_onoma_gazetteer_xhtml(onoma_dict: Dict[str, OnomaEntry]) -> str:
         f'<a href="#letter-{letter}" style="text-decoration: none; font-weight: bold; margin: 0 0.3em; color: #0b5394;">{letter}</a>'
         for letter in sorted(letter_groups.keys())
     ]
-    lines.append(" &bull; ".join(alphabet_links))
+    lines.append(" &#8226; ".join(alphabet_links))
     lines.append("    </div>\n")
 
     for letter in sorted(letter_groups.keys()):
-        lines.append(f'    <h3 id="letter-{letter}" class="footnotes-title" style="font-size: 1.4em; border-bottom: 2px solid #0b5394; color: #0b5394; margin-top: 2em;">&mdash; {letter} &mdash;</h3>')
+        lines.append(f'    <h3 id="letter-{letter}" class="footnotes-title" style="font-size: 1.4em; border-bottom: 2px solid #0b5394; color: #0b5394; margin-top: 2em;">&#8212; {letter} &#8212;</h3>')
 
         for entry in letter_groups[letter]:
             lemma_esc = html.escape(entry.lemma)
@@ -313,8 +313,12 @@ def render_onoma_gazetteer_xhtml(onoma_dict: Dict[str, OnomaEntry]) -> str:
             if def_esc:
                 lines.append(f'      <p style="font-style: italic; color: #444; font-size: 0.92em; margin: 0.2em 0 0.4em 0;">{def_esc}</p>')
 
-            if summary_esc:
-                lines.append(f'      <p style="font-size: 0.92em; line-height: 1.45; color: #222; margin: 0.3em 0;">{summary_esc}</p>')
+            if entry.etymology_paragraphs:
+                for p in entry.etymology_paragraphs:
+                    lines.append(f'      <p style="font-size: 0.92em; line-height: 1.45; color: #222; margin: 0.35em 0;">{html.escape(p)}</p>')
+            elif summary_esc:
+                for p in summary_esc.split("\n\n"):
+                    lines.append(f'      <p style="font-size: 0.92em; line-height: 1.45; color: #222; margin: 0.35em 0;">{p}</p>')
 
             lines.append("    </div>")
 

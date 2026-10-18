@@ -24,7 +24,7 @@ prose_replacements = [
         "in historical phonetic transcription, has",
     ),
     (
-        r"and the Deseret Alphabet spelling of the PN [A-Z ]+,, \(IPA:[^)]+\), and, \(IPA:[^)]+\), suggest",
+        r"and the Deseret Alphabet spelling of the PN [A-Z ]+,*\s*(?:\(IPA:[^)]+\),*\s*)*(?:and,*\s*(?:\(IPA:[^)]+\),*\s*)*)?suggest",
         "and historical phonetic transcriptions (IPA) suggest",
     ),
     (
